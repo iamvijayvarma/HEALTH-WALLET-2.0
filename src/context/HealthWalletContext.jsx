@@ -271,18 +271,36 @@ const INITIAL_STATE = {
 
 export const HealthWalletProvider = ({ children }) => {
   const [state, setState] = useState(() => {
+    const hashRoute = window.location.hash ? window.location.hash.replace(/^#\/?/, '') : '';
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        return { ...INITIAL_STATE, ...JSON.parse(saved) };
+        const parsed = JSON.parse(saved);
+        return {
+          ...INITIAL_STATE,
+          ...parsed,
+          currentRoute: hashRoute || parsed.currentRoute || 'login'
+        };
       }
     } catch {
       // ignore
     }
-    return INITIAL_STATE;
+    return { ...INITIAL_STATE, currentRoute: hashRoute || 'login' };
   });
 
   const [toasts, setToasts] = useState([]);
+
+  // Sync hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace(/^#\/?/, '');
+      if (hash && hash !== state.currentRoute) {
+        setState(prev => ({ ...prev, currentRoute: hash }));
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [state.currentRoute]);
 
   // Save changes to localStorage
   useEffect(() => {
@@ -307,6 +325,7 @@ export const HealthWalletProvider = ({ children }) => {
 
   // Route navigation
   const navigate = (route) => {
+    window.location.hash = `#${route}`;
     setState(prev => ({ ...prev, currentRoute: route }));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -319,6 +338,7 @@ export const HealthWalletProvider = ({ children }) => {
 
   // User actions
   const loginUser = (credentials) => {
+    window.location.hash = '#dashboard';
     setState(prev => ({
       ...prev,
       isAuthenticated: true,
@@ -328,10 +348,11 @@ export const HealthWalletProvider = ({ children }) => {
   };
 
   const logoutUser = () => {
+    window.location.hash = '#login';
     setState(prev => ({
       ...prev,
       isAuthenticated: false,
-      currentRoute: 'landing'
+      currentRoute: 'login'
     }));
     addToast('Signed out successfully', 'info');
   };
