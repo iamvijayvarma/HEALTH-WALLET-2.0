@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useHealthWallet } from '../../context/HealthWalletContext';
 import {
   CameraIcon,
@@ -9,8 +9,7 @@ import {
   RefreshIcon,
   SwitchCameraIcon,
   AlertTriangleIcon,
-  FileTextIcon,
-  EyeIcon
+  FileTextIcon
 } from '../common/Icons';
 
 export const ScanReportPage = () => {
@@ -19,23 +18,32 @@ export const ScanReportPage = () => {
   // Active Tab: 'camera' | 'upload'
   const [activeTab, setActiveTab] = useState('camera');
 
-  // Camera Lifecycle States: 'idle' | 'requesting' | 'active' | 'captured' | 'denied' | 'unavailable' | 'not-found'
-  const [cameraState, setCameraState] = useState('idle');
+  // Camera Open & Status State
+  // Statuses: 'idle' | 'Requesting camera' | 'Permission granted' | 'Stream active' | 'Video ready' | 'Camera error'
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraStatus, setCameraStatus] = useState('idle');
+  const [isCameraReady, setIsCameraReady] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [cameraErrorMessage, setCameraErrorMessage] = useState('');
 
-  // MediaStream and Devices
+  // Diagnostic metrics
+  const [videoTrackCount, setVideoTrackCount] = useState(0);
+  const [videoReadyState, setVideoReadyState] = useState(0);
+  const [videoDimensions, setVideoDimensions] = useState({ width: 0, height: 0 });
+
+  // DOM and Stream Refs
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  // Multi-camera device tracking
   const [availableCameras, setAvailableCameras] = useState([]);
   const [selectedCameraId, setSelectedCameraId] = useState('');
   const [facingMode, setFacingMode] = useState('environment');
 
-  // Captured Report Image Data
+  // Captured Image & Review
   const [capturedImage, setCapturedImage] = useState(null);
   const [capturedFileName, setCapturedFileName] = useState('');
-
-  // OCR Processing & Review States
   const [isProcessing, setIsProcessing] = useState(false);
   const [isReviewReady, setIsReviewReady] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -50,11 +58,11 @@ export const ScanReportPage = () => {
   ]);
 
   // =========================================================================
-  // CAMERA LIFECYCLE MANAGEMENT
+  // CAMERA STREAM LIFECYCLE
   // =========================================================================
 
-  // Safely stop all active MediaStream tracks
-  const stopCamera = () => {
+  // Fully stop all active media stream tracks
+  const stopCamera = useCallback(() => {
     if (streamRef.current) {
       const tracks = streamRef.current.getTracks();
       tracks.forEach(track => {
@@ -66,56 +74,67 @@ export const ScanReportPage = () => {
       });
       streamRef.current = null;
     }
+
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-  };
 
-  // Ensure camera stream is stopped when unmounting or navigating away
+    setVideoTrackCount(0);
+    setVideoReadyState(0);
+    setVideoDimensions({ width: 0, height: 0 });
+    setIsCameraReady(false);
+    setIsVideoPlaying(false);
+  }, []);
+
+  // Stop camera on unmount or route change
   useEffect(() => {
     return () => {
       stopCamera();
     };
-  }, []);
+  }, [stopCamera]);
 
-  // Stop camera when user switches to 'upload' tab
+  // Stop camera when navigating away via hash change
+  useEffect(() => {
+    const handleHashChange = () => {
+      stopCamera();
+      setIsCameraOpen(false);
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [stopCamera]);
+
+  // Stop camera when switching to upload tab
   useEffect(() => {
     if (activeTab !== 'camera') {
       stopCamera();
-      if (cameraState === 'active' || cameraState === 'requesting') {
-        setCameraState('idle');
-      }
+      setIsCameraOpen(false);
+      setCameraStatus('idle');
     }
-  }, [activeTab]);
+  }, [activeTab, stopCamera]);
 
-  // Start the device camera stream
-  const startCamera = async (overrideFacing = facingMode, overrideDeviceId = selectedCameraId) => {
-    // Verify MediaDevices API availability (browser support & secure context localhost / HTTPS)
+  // Request real camera stream and attach to the mounted <video> element
+  const requestCameraStream = useCallback(async (preferFacing = facingMode, deviceId = selectedCameraId) => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setCameraState('unavailable');
-      setCameraErrorMessage(
-        'Camera API is not supported by this browser or requires a secure connection (HTTPS or localhost).'
-      );
+      setCameraStatus('Camera error');
+      setCameraErrorMessage('Camera API is not supported by this browser or requires a secure context (HTTPS / localhost).');
       return;
     }
 
-    // Stop any existing stream before starting a new one
-    stopCamera();
-    setCameraState('requesting');
+    setCameraStatus('Requesting camera');
     setCameraErrorMessage('');
+    setIsCameraReady(false);
+    setIsVideoPlaying(false);
 
     try {
-      // Build constraints
       const videoConstraints = {
         width: { ideal: 1920 },
         height: { ideal: 1080 }
       };
 
-      if (overrideDeviceId) {
-        videoConstraints.deviceId = { exact: overrideDeviceId };
+      if (deviceId) {
+        videoConstraints.deviceId = { exact: deviceId };
       } else {
-        // Mobile-first: Prefer rear/environment-facing camera
-        videoConstraints.facingMode = { ideal: overrideFacing };
+        videoConstraints.facingMode = { ideal: preferFacing };
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -124,79 +143,124 @@ export const ScanReportPage = () => {
       });
 
       streamRef.current = stream;
+      setCameraStatus('Permission granted');
+      const tracks = stream.getVideoTracks();
+      setVideoTrackCount(tracks.length);
 
+      // Attach stream directly to video element
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().catch(() => {});
-        };
+        setCameraStatus('Stream active');
+        try {
+          await videoRef.current.play();
+        } catch (playErr) {
+          console.warn('video.play() promise warning:', playErr);
+        }
       }
 
-      setCameraState('active');
+      // Logging diagnostics
+      console.log('Camera stream:', stream);
+      console.log('Video tracks:', stream.getVideoTracks());
+      console.log('Video element:', videoRef.current);
+      console.log('Video dimensions:', videoRef.current?.videoWidth, videoRef.current?.videoHeight);
+      console.log('Ready state:', videoRef.current?.readyState);
 
-      // Enumerate available video input devices for multi-camera support
+      // Enumerate cameras for multi-camera switcher
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoInputs = devices.filter(d => d.kind === 'videoinput');
         setAvailableCameras(videoInputs);
-        if (!overrideDeviceId && videoInputs.length > 0) {
+        if (!deviceId && videoInputs.length > 0) {
           const activeTrack = stream.getVideoTracks()[0];
-          const currentSettings = activeTrack?.getSettings?.();
-          if (currentSettings?.deviceId) {
-            setSelectedCameraId(currentSettings.deviceId);
+          const settings = activeTrack?.getSettings?.();
+          if (settings?.deviceId) {
+            setSelectedCameraId(settings.deviceId);
           }
         }
       } catch {
-        // device enumeration failure is non-fatal
+        // non-fatal
       }
     } catch (err) {
       console.error('Camera access error:', err);
+      setCameraStatus('Camera error');
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setCameraState('denied');
-        setCameraErrorMessage(
-          'Camera access is required to scan a medical report. Please allow camera access in your browser settings.'
-        );
+        setCameraErrorMessage('Camera access is required to scan a medical report. Please allow camera access in your browser settings.');
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        setCameraState('not-found');
         setCameraErrorMessage('No camera detected on this device. You can upload a file instead.');
       } else {
-        setCameraState('unavailable');
-        setCameraErrorMessage(
-          err.message || 'Camera is currently unavailable or in use by another application.'
-        );
+        setCameraErrorMessage(err.message || 'Camera is currently unavailable or in use by another application.');
       }
     }
+  }, [facingMode, selectedCameraId]);
+
+  // Flow Step 15: Open camera container first, so <video> is mounted, then request camera stream
+  const handleOpenScanCamera = () => {
+    setCapturedImage(null);
+    setIsReviewReady(false);
+    setIsSaved(false);
+    setCameraErrorMessage('');
+    setIsCameraOpen(true);
   };
 
-  // Switch camera between available devices or toggle facingMode
+  // When isCameraOpen becomes true, the <video> element is guaranteed mounted in DOM
+  useEffect(() => {
+    if (isCameraOpen && !capturedImage) {
+      requestCameraStream();
+    }
+  }, [isCameraOpen, capturedImage, requestCameraStream]);
+
+  // Periodically check if video is ready and dimensions are positive
+  useEffect(() => {
+    if (!isCameraOpen || isCameraReady) return;
+
+    const interval = setInterval(() => {
+      const v = videoRef.current;
+      if (v) {
+        setVideoReadyState(v.readyState);
+        if (v.videoWidth > 0 && v.videoHeight > 0) {
+          setVideoDimensions({ width: v.videoWidth, height: v.videoHeight });
+        }
+        if (v.readyState >= 2 && v.videoWidth > 0 && v.videoHeight > 0) {
+          setIsCameraReady(true);
+          setCameraStatus('Video ready');
+        }
+      }
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [isCameraOpen, isCameraReady]);
+
+  // Switch camera button handler
   const handleSwitchCamera = () => {
+    stopCamera();
     if (availableCameras.length > 1) {
       const currentIndex = availableCameras.findIndex(d => d.deviceId === selectedCameraId);
       const nextIndex = (currentIndex + 1) % availableCameras.length;
-      const nextDevice = availableCameras[nextIndex];
-      setSelectedCameraId(nextDevice.deviceId);
-      startCamera(facingMode, nextDevice.deviceId);
+      const nextId = availableCameras[nextIndex].deviceId;
+      setSelectedCameraId(nextId);
+      requestCameraStream(facingMode, nextId);
     } else {
       const nextFacing = facingMode === 'environment' ? 'user' : 'environment';
       setFacingMode(nextFacing);
-      startCamera(nextFacing, null);
+      requestCameraStream(nextFacing, null);
     }
   };
 
-  // Close camera and return to idle
+  // Close camera button handler
   const handleCloseCamera = () => {
     stopCamera();
-    setCameraState('idle');
+    setIsCameraOpen(false);
+    setCameraStatus('idle');
   };
 
   // =========================================================================
-  // FRAME CAPTURE & REPORT PROCESSING
+  // CAPTURE & REPORT PROCESSING
   // =========================================================================
 
-  // Capture current video frame to image
+  // Capture current video frame using canvas
   const handleCapture = () => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !isCameraReady) return;
 
     try {
       const width = video.videoWidth || 1280;
@@ -211,29 +275,32 @@ export const ScanReportPage = () => {
 
       const dataUrl = canvas.toDataURL('image/jpeg', 0.94);
 
-      // Stop camera stream immediately upon capture completion
+      // Stop camera stream immediately when capture is completed
       stopCamera();
+      setIsCameraOpen(false);
 
       setCapturedImage(dataUrl);
-      setCapturedFileName(`Camera_Scan_${new Date().toISOString().slice(0, 10)}.jpg`);
-      setCameraState('captured');
+      setCapturedFileName(`Medical_Scan_${new Date().toISOString().slice(0, 10)}.jpg`);
       addToast('Medical report image captured', 'success');
     } catch (err) {
-      console.error('Capture frame error:', err);
+      console.error('Frame capture error:', err);
       addToast('Could not capture frame. Please try again.', 'error');
     }
   };
 
-  // Retake photo: discard captured image and re-open camera
+  // Retake photo: discard captured frame and reopen live camera
   const handleRetake = () => {
     setCapturedImage(null);
-    startCamera(facingMode, selectedCameraId);
+    setIsReviewReady(false);
+    setIsSaved(false);
+    setIsCameraOpen(true);
   };
 
-  // "Use This Report": Process captured or uploaded report into AI extraction workflow
+  // "Use This Report": proceed to AI clinical extraction and review table
   const handleUseReport = () => {
     setIsProcessing(true);
-    setCameraState('idle');
+    stopCamera();
+    setIsCameraOpen(false);
 
     setTimeout(() => {
       setIsProcessing(false);
@@ -242,7 +309,7 @@ export const ScanReportPage = () => {
     }, 1200);
   };
 
-  // Handle local file upload
+  // File upload handler
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -256,21 +323,18 @@ export const ScanReportPage = () => {
       };
       reader.readAsDataURL(file);
     } else {
-      // PDF or non-image document placeholder preview
       setCapturedImage('pdf_document');
     }
-
-    setCameraState('captured');
   };
 
-  // Handle editing metric value in review table
+  // Inline value editor for review table
   const handleTestValueChange = (id, newValue) => {
     setExtractedData(prev =>
       prev.map(item => item.id === id ? { ...item, value: newValue } : item)
     );
   };
 
-  // Save reviewed report to Health Records
+  // Save to Health Records
   const handleSaveToRecords = () => {
     const summary = extractedData.map(t => `${t.testName}: ${t.value} ${t.unit}`).join(', ');
     addHealthRecord({
@@ -287,13 +351,13 @@ export const ScanReportPage = () => {
 
   return (
     <div>
-      {/* 1. Page Header */}
+      {/* 1. Header */}
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--hw-text-main)', margin: '0 0 4px 0' }}>
           Scan Medical Report
         </h1>
         <p style={{ fontSize: '13px', color: 'var(--hw-text-muted)', margin: 0 }}>
-          Upload or scan your medical reports with your device camera. Our AI will extract the information for review.
+          Upload or scan your medical reports with your real device camera. Our AI will extract the information for review.
         </p>
       </div>
 
@@ -327,28 +391,93 @@ export const ScanReportPage = () => {
         </button>
       </div>
 
-      {/* 3. CAMERA & CAPTURE SECTION */}
+      {/* 3. CAMERA TAB CONTENT */}
       {activeTab === 'camera' && (
         <div>
-          {/* STATE A: Camera Active (Live Viewfinder) */}
-          {cameraState === 'active' && (
-            <div className="hw-camera-wrapper">
+          {/* CAMERA VIEWPORT MODAL / CONTAINER (Mounted when isCameraOpen is true) */}
+          {isCameraOpen && !capturedImage && (
+            <div className="hw-camera-wrapper" style={{ marginBottom: '28px' }}>
               <div className="hw-camera-viewport">
+                {/* 2. REAL <video> element inside camera viewport with autoPlay, playsInline, muted */}
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
                   muted
                   className="hw-camera-video"
+                  onLoadedMetadata={(e) => {
+                    const v = e.target;
+                    console.log('onLoadedMetadata:', v.videoWidth, v.videoHeight, v.readyState);
+                    setVideoDimensions({ width: v.videoWidth, height: v.videoHeight });
+                    setVideoReadyState(v.readyState);
+                    if (v.readyState >= 2 && v.videoWidth > 0 && v.videoHeight > 0) {
+                      setCameraStatus('Video ready');
+                      setIsCameraReady(true);
+                    }
+                  }}
+                  onCanPlay={(e) => {
+                    const v = e.target;
+                    console.log('onCanPlay readyState:', v.readyState);
+                    setVideoReadyState(v.readyState);
+                    if (v.readyState >= 2 && v.videoWidth > 0 && v.videoHeight > 0) {
+                      setCameraStatus('Video ready');
+                      setIsCameraReady(true);
+                    }
+                  }}
+                  onPlaying={(e) => {
+                    const v = e.target;
+                    console.log('onPlaying:', v.videoWidth, v.videoHeight, v.readyState);
+                    setIsVideoPlaying(true);
+                    setVideoReadyState(v.readyState);
+                    setVideoDimensions({ width: v.videoWidth, height: v.videoHeight });
+                    if (v.readyState >= 2 && v.videoWidth > 0 && v.videoHeight > 0) {
+                      setCameraStatus('Video ready');
+                      setIsCameraReady(true);
+                    }
+                  }}
+                  onError={(e) => {
+                    console.error('Video element error:', e);
+                    setCameraStatus('Camera error');
+                    setIsCameraReady(false);
+                  }}
                 />
 
-                {/* Guide Frame Overlay */}
+                {/* 7. VISIBLE DEVELOPMENT DIAGNOSTICS */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '52px',
+                    left: '14px',
+                    background: 'rgba(15, 23, 42, 0.88)',
+                    color: '#38bdf8',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    fontFamily: 'Consolas, monospace',
+                    fontSize: '11px',
+                    lineHeight: '1.5',
+                    zIndex: 10,
+                    pointerEvents: 'none',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>Camera status:</span>
+                    <strong style={{ color: isCameraReady ? '#4ade80' : cameraStatus === 'Camera error' ? '#f87171' : '#facc15' }}>
+                      {cameraStatus}
+                    </strong>
+                  </div>
+                  <div>Tracks: {videoTrackCount} | readyState: {videoReadyState}</div>
+                  <div>Dimensions: {videoDimensions.width} × {videoDimensions.height}</div>
+                </div>
+
+                {/* 11. SCANNING OVERLAY POSITIONED ABOVE VIDEO */}
                 <div className="hw-camera-overlay">
                   {/* Top Bar */}
                   <div className="hw-camera-topbar">
                     <div className="hw-camera-live-pill">
                       <span className="hw-camera-live-dot" />
-                      <span>LIVE CAMERA</span>
+                      <span>{isCameraReady ? 'CAMERA READY' : cameraStatus.toUpperCase()}</span>
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -375,7 +504,7 @@ export const ScanReportPage = () => {
                     </div>
                   </div>
 
-                  {/* Center Medical Report Framing Box */}
+                  {/* Document Alignment Frame */}
                   <div className="hw-camera-frame">
                     <div className="hw-camera-corner hw-camera-corner-tl" />
                     <div className="hw-camera-corner hw-camera-corner-tr" />
@@ -387,14 +516,20 @@ export const ScanReportPage = () => {
                     </div>
                   </div>
 
-                  {/* Bottom Bar: Capture Shutter */}
+                  {/* Bottom Bar with Capture Shutter (Disabled until camera is ready) */}
                   <div className="hw-camera-bottombar">
                     <button
                       type="button"
                       id="btn-capture-camera"
                       className="hw-camera-shutter-btn"
+                      disabled={!isCameraReady}
                       onClick={handleCapture}
-                      title="Capture Report"
+                      style={{
+                        opacity: isCameraReady ? 1 : 0.45,
+                        cursor: isCameraReady ? 'pointer' : 'not-allowed',
+                        transform: isCameraReady ? undefined : 'scale(0.95)'
+                      }}
+                      title={isCameraReady ? 'Capture Report Photo' : 'Waiting for video stream...'}
                       aria-label="Capture Report Photo"
                     >
                       <div className="hw-camera-shutter-inner">
@@ -403,127 +538,66 @@ export const ScanReportPage = () => {
                     </button>
                   </div>
                 </div>
+
+                {/* Error Banner inside viewport if permissions denied */}
+                {cameraStatus === 'Camera error' && cameraErrorMessage && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'rgba(15, 23, 42, 0.94)',
+                      zIndex: 20,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '24px',
+                      textAlign: 'center'
+                    }}
+                  >
+                    <AlertTriangleIcon size={36} color="var(--hw-danger)" />
+                    <h4 style={{ color: '#ffffff', fontSize: '16px', margin: '12px 0 8px 0' }}>
+                      Camera Access Required
+                    </h4>
+                    <p style={{ color: '#cbd5e1', fontSize: '13px', maxWidth: '440px', lineHeight: '1.6', margin: '0 0 20px 0' }}>
+                      {cameraErrorMessage}
+                    </p>
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className="hw-btn hw-btn-primary hw-btn-sm"
+                        onClick={() => requestCameraStream()}
+                      >
+                        <RefreshIcon size={14} />
+                        <span>Try Again</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="hw-btn hw-btn-secondary hw-btn-sm"
+                        onClick={handleCloseCamera}
+                      >
+                        Close
+                      </button>
+                      <button
+                        type="button"
+                        className="hw-btn hw-btn-teal hw-btn-sm"
+                        onClick={() => {
+                          handleCloseCamera();
+                          setActiveTab('upload');
+                        }}
+                      >
+                        <UploadIcon size={14} />
+                        <span>Upload File Instead</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {/* STATE B: Requesting Permission */}
-          {cameraState === 'requesting' && (
-            <div className="hw-camera-state-box">
-              <div
-                style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '50%',
-                  background: 'var(--hw-primary-light)',
-                  color: 'var(--hw-primary)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '16px'
-                }}
-              >
-                <CameraIcon size={28} />
-              </div>
-              <h3 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--hw-text-main)', marginBottom: '8px' }}>
-                Requesting Camera Permission
-              </h3>
-              <p style={{ fontSize: '13px', color: 'var(--hw-text-muted)', maxWidth: '420px', margin: '0 auto 20px auto' }}>
-                Please allow camera access in the browser prompt to scan your medical document with your real device camera.
-              </p>
-              <button
-                type="button"
-                className="hw-btn hw-btn-secondary hw-btn-sm"
-                onClick={handleCloseCamera}
-              >
-                Cancel
-              </button>
-            </div>
-          )}
-
-          {/* STATE C: Permission Denied */}
-          {cameraState === 'denied' && (
-            <div className="hw-camera-state-box" style={{ borderColor: 'var(--hw-danger-light)' }}>
-              <div
-                style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '50%',
-                  background: 'var(--hw-danger-light)',
-                  color: 'var(--hw-danger)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '16px'
-                }}
-              >
-                <AlertTriangleIcon size={28} />
-              </div>
-              <h3 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--hw-danger)', marginBottom: '8px' }}>
-                Camera Access Required
-              </h3>
-              <p style={{ fontSize: '13px', color: 'var(--hw-text-muted)', maxWidth: '460px', margin: '0 auto 20px auto', lineHeight: '1.6' }}>
-                Camera access is required to scan a medical report. Please allow camera access in your browser settings.
-              </p>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  id="btn-retry-camera"
-                  className="hw-btn hw-btn-primary hw-btn-md"
-                  onClick={() => startCamera()}
-                >
-                  <RefreshIcon size={16} />
-                  <span>Try Again</span>
-                </button>
-                <button
-                  type="button"
-                  className="hw-btn hw-btn-secondary hw-btn-md"
-                  onClick={() => setActiveTab('upload')}
-                >
-                  <UploadIcon size={16} />
-                  <span>Upload File Instead</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STATE D: Camera Unavailable or Not Found */}
-          {(cameraState === 'unavailable' || cameraState === 'not-found') && (
-            <div className="hw-camera-state-box">
-              <div
-                style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '50%',
-                  background: 'var(--hw-primary-light)',
-                  color: 'var(--hw-primary)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '16px'
-                }}
-              >
-                <CameraIcon size={28} />
-              </div>
-              <h3 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--hw-text-main)', marginBottom: '8px' }}>
-                {cameraState === 'not-found' ? 'No Camera Detected' : 'Camera Unavailable'}
-              </h3>
-              <p style={{ fontSize: '13px', color: 'var(--hw-text-muted)', maxWidth: '460px', margin: '0 auto 20px auto' }}>
-                {cameraErrorMessage || 'Your device camera could not be accessed. You can still upload your report file directly.'}
-              </p>
-              <button
-                type="button"
-                className="hw-btn hw-btn-primary hw-btn-md"
-                onClick={() => setActiveTab('upload')}
-              >
-                <UploadIcon size={16} />
-                <span>Upload File Instead</span>
-              </button>
-            </div>
-          )}
-
-          {/* STATE E: Captured Photo Preview (Before Processing) */}
-          {cameraState === 'captured' && capturedImage && (
+          {/* CAPTURED REPORT PHOTO PREVIEW */}
+          {capturedImage && !isReviewReady && (
             <div className="hw-captured-preview-card">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -536,9 +610,10 @@ export const ScanReportPage = () => {
               </div>
 
               <div className="hw-captured-image-box">
-                <img src={capturedImage} alt="Captured Medical Report Preview" />
+                <img src={capturedImage} alt="Captured Medical Report" />
               </div>
 
+              {/* 5. After capture: [ Retake ] [ Use This Report ] */}
               <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', marginTop: '18px', flexWrap: 'wrap' }}>
                 <button
                   type="button"
@@ -563,8 +638,8 @@ export const ScanReportPage = () => {
             </div>
           )}
 
-          {/* STATE F: Idle Default Trigger Card */}
-          {cameraState === 'idle' && !isReviewReady && (
+          {/* IDLE TRIGGER CARD: Click to start camera scan */}
+          {!isCameraOpen && !capturedImage && !isReviewReady && (
             <div
               className="hw-card"
               style={{
@@ -573,8 +648,10 @@ export const ScanReportPage = () => {
                 textAlign: 'center',
                 padding: '44px 20px',
                 backgroundColor: '#ffffff',
-                marginBottom: '28px'
+                marginBottom: '28px',
+                cursor: 'pointer'
               }}
+              onClick={handleOpenScanCamera}
             >
               <div
                 style={{
@@ -593,19 +670,23 @@ export const ScanReportPage = () => {
               </div>
 
               <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--hw-text-main)', margin: '0 0 6px 0' }}>
-                Open Real Device Camera
+                Scan with Real Device Camera
               </h3>
 
               <p style={{ fontSize: '13px', color: 'var(--hw-text-muted)', margin: '0 auto 18px auto', maxWidth: '440px' }}>
-                Use your smartphone or webcam to capture a high-resolution photo of your physical prescription or laboratory test report.
+                Open your device camera to preview, frame, and capture medical prescriptions or laboratory test reports.
               </p>
 
+              {/* 1. "Scan with Camera" button */}
               <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
                 <button
                   type="button"
                   id="btn-start-camera-scan"
                   className="hw-btn hw-btn-primary hw-btn-md"
-                  onClick={() => startCamera()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenScanCamera();
+                  }}
                   style={{ padding: '10px 24px' }}
                 >
                   <CameraIcon size={18} />
@@ -614,17 +695,17 @@ export const ScanReportPage = () => {
               </div>
 
               <div style={{ marginTop: '16px', fontSize: '11px', color: 'var(--hw-text-subtle)' }}>
-                Rear environment camera preferred on mobile • Zero automatic stream uploads
+                Rear environment camera preferred on mobile • Live viewport preview
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* 4. FILE UPLOAD TAB */}
+      {/* 4. FILE UPLOAD TAB CONTENT */}
       {activeTab === 'upload' && (
         <div>
-          {cameraState === 'captured' && (
+          {capturedImage && !isReviewReady && (
             <div className="hw-captured-preview-card">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -636,9 +717,9 @@ export const ScanReportPage = () => {
                 <span className="hw-badge hw-badge-teal">File Ready</span>
               </div>
 
-              {capturedImage && capturedImage !== 'pdf_document' ? (
+              {capturedImage !== 'pdf_document' ? (
                 <div className="hw-captured-image-box">
-                  <img src={capturedImage} alt="Uploaded Document Preview" />
+                  <img src={capturedImage} alt="Uploaded Document" />
                 </div>
               ) : (
                 <div style={{ padding: '32px', textAlign: 'center', background: 'var(--hw-bg)', borderRadius: '8px', margin: '14px 0' }}>
@@ -656,10 +737,7 @@ export const ScanReportPage = () => {
                 <button
                   type="button"
                   className="hw-btn hw-btn-secondary hw-btn-md"
-                  onClick={() => {
-                    setCapturedImage(null);
-                    setCameraState('idle');
-                  }}
+                  onClick={() => setCapturedImage(null)}
                 >
                   <RefreshIcon size={16} />
                   <span>Choose Another</span>
@@ -677,7 +755,7 @@ export const ScanReportPage = () => {
             </div>
           )}
 
-          {cameraState !== 'captured' && !isReviewReady && (
+          {!capturedImage && !isReviewReady && (
             <div
               className="hw-card"
               style={{
@@ -742,7 +820,7 @@ export const ScanReportPage = () => {
         </div>
       )}
 
-      {/* 5. AI PROCESSING INDICATOR */}
+      {/* 5. AI PROCESSING SPINNER */}
       {isProcessing && (
         <div className="hw-card" style={{ textAlign: 'center', padding: '36px 20px', marginBottom: '28px' }}>
           <div
@@ -765,7 +843,7 @@ export const ScanReportPage = () => {
         </div>
       )}
 
-      {/* 6. EXTRACTED INFORMATION TABLE (REVIEW & CONFIRM) */}
+      {/* 6. EXTRACTED CLINICAL METRICS TABLE (REVIEW & CONFIRM) */}
       {isReviewReady && (
         <div className="hw-card">
           {/* Document Attachment Preview Bar */}
@@ -808,9 +886,9 @@ export const ScanReportPage = () => {
                 onClick={() => {
                   setIsReviewReady(false);
                   if (activeTab === 'camera') {
-                    startCamera();
+                    handleOpenScanCamera();
                   } else {
-                    setCameraState('idle');
+                    setCapturedImage(null);
                   }
                 }}
                 style={{ color: 'var(--hw-primary)', fontSize: '12px' }}
