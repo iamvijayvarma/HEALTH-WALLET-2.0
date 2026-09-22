@@ -238,7 +238,7 @@ const INITIAL_STATE = {
   notifications: [
     {
       id: 'notif-1',
-      title: 'Official ABDM Record Synced',
+      title: 'Health Record Synced',
       message: 'Apollo Hospitals verified and digitally signed your Complete Blood Count report.',
       time: '18 Sep 2026',
       read: false,

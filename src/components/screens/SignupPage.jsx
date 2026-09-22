@@ -30,7 +30,7 @@ export const SignupPage = () => {
     emergencyName: 'Rajendran R',
     emergencyPhone: '9840123456',
     emergencyRelation: 'Father',
-    consentAbdm: true,
+    consentRecords: true,
     consentEmergency: true
   });
 
@@ -372,8 +372,8 @@ export const SignupPage = () => {
               <label className="hw-checkbox-label" style={{ alignItems: 'flex-start' }}>
                 <input
                   type="checkbox"
-                  name="consentAbdm"
-                  checked={formData.consentAbdm}
+                  name="consentRecords"
+                  checked={formData.consentRecords}
                   onChange={handleChange}
                   className="hw-checkbox"
                   style={{ marginTop: '3px' }}

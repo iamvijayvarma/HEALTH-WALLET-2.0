@@ -3,13 +3,10 @@ import { useHealthWallet } from '../../context/HealthWalletContext';
 import {
   SearchIcon,
   BellIcon,
-  GlobeIcon,
   MenuIcon,
-  CheckCircleIcon,
-  AlertTriangleIcon,
-  QrCodeIcon,
-  SettingsIcon,
-  UserIcon
+  ChevronDownIcon,
+  UserIcon,
+  QrCodeIcon
 } from './Icons';
 
 export const Header = ({ onOpenMobileMenu }) => {
@@ -21,22 +18,13 @@ export const Header = ({ onOpenMobileMenu }) => {
     setSearchQuery,
     notifications,
     navigate,
-    logoutUser,
-    isOfflineSimulated
+    logoutUser
   } = useHealthWallet();
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showLangMenu, setShowLangMenu] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.read).length;
-
-  const languages = [
-    { code: 'en', label: 'English', native: 'English' },
-    { code: 'ta', label: 'Tamil', native: 'தமிழ்' },
-    { code: 'hi', label: 'Hindi', native: 'हिन्दी' },
-    { code: 'te', label: 'Telugu', native: 'తెలుగు' }
-  ];
 
   return (
     <header className="hw-header">
@@ -48,92 +36,55 @@ export const Header = ({ onOpenMobileMenu }) => {
           onClick={onOpenMobileMenu}
           aria-label="Open navigation menu"
         >
-          <MenuIcon size={22} />
+          <MenuIcon size={20} />
         </button>
 
         <div className="hw-header-search">
           <div className="hw-input-prefix-icon">
-            <SearchIcon size={16} />
+            <SearchIcon size={15} color="#94a3b8" />
           </div>
           <input
             type="search"
             className="hw-input"
-            placeholder="Search records, reports, doctors, medicines..."
+            placeholder="Search records, reports, doctors..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
 
-      {/* Right: Language, Notifications, User Profile */}
+      {/* Right: Language, Notifications Bell, User Profile (Matching Reference UI Panel 2) */}
       <div className="hw-header-right">
-        {/* Language Selector */}
-        <div style={{ position: 'relative' }}>
+        {/* Language Switcher: English | தமிழ் */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
           <button
             type="button"
-            className="hw-lang-selector"
-            onClick={() => setShowLangMenu(!showLangMenu)}
-            aria-label="Select language"
+            className="hw-lang-selector-header"
+            style={{ fontWeight: language === 'en' ? 700 : 400, color: language === 'en' ? 'var(--hw-primary)' : 'inherit' }}
+            onClick={() => setLanguage('en')}
           >
-            <GlobeIcon size={16} />
-            <span>{languages.find(l => l.code === language)?.native || 'English'}</span>
+            English
           </button>
-
-          {showLangMenu && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '46px',
-                right: 0,
-                width: '160px',
-                backgroundColor: '#ffffff',
-                border: '1px solid var(--hw-border)',
-                borderRadius: 'var(--hw-radius-md)',
-                boxShadow: 'var(--hw-shadow-lg)',
-                padding: '6px',
-                zIndex: 1000
-              }}
-            >
-              {languages.map(l => (
-                <button
-                  key={l.code}
-                  type="button"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    width: '100%',
-                    padding: '8px 12px',
-                    border: 'none',
-                    background: language === l.code ? 'var(--hw-primary-light)' : 'none',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    color: language === l.code ? 'var(--hw-primary)' : 'var(--hw-text-body)',
-                    cursor: 'pointer',
-                    textAlign: 'left'
-                  }}
-                  onClick={() => {
-                    setLanguage(l.code);
-                    setShowLangMenu(false);
-                  }}
-                >
-                  <span>{l.native}</span>
-                  {language === l.code && <CheckCircleIcon size={14} color="var(--hw-primary)" />}
-                </button>
-              ))}
-            </div>
-          )}
+          <span style={{ color: '#cbd5e1' }}>|</span>
+          <button
+            type="button"
+            className="hw-lang-selector-header"
+            style={{ fontWeight: language === 'ta' ? 700 : 400, color: language === 'ta' ? 'var(--hw-primary)' : 'inherit' }}
+            onClick={() => setLanguage('ta')}
+          >
+            தமிழ்
+          </button>
         </div>
 
-        {/* Notifications Icon Button & Flyout */}
+        {/* Notifications Bell */}
         <div style={{ position: 'relative' }}>
           <button
             type="button"
-            className="hw-header-icon-btn"
+            className="hw-header-bell-btn"
             onClick={() => setShowNotifications(!showNotifications)}
-            aria-label="View notifications"
+            aria-label="Notifications"
           >
-            <BellIcon size={18} />
+            <BellIcon size={16} />
             {unreadCount > 0 && <span className="hw-badge-dot" />}
           </button>
 
@@ -141,9 +92,9 @@ export const Header = ({ onOpenMobileMenu }) => {
             <div
               style={{
                 position: 'absolute',
-                top: '48px',
+                top: '44px',
                 right: 0,
-                width: '320px',
+                width: '300px',
                 backgroundColor: '#ffffff',
                 border: '1px solid var(--hw-border)',
                 borderRadius: 'var(--hw-radius-lg)',
@@ -153,30 +104,23 @@ export const Header = ({ onOpenMobileMenu }) => {
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <strong style={{ fontSize: '14px', color: 'var(--hw-text-main)' }}>Notifications</strong>
+                <strong style={{ fontSize: '13px', color: 'var(--hw-text-main)' }}>Notifications</strong>
                 <span style={{ fontSize: '11px', color: 'var(--hw-text-muted)' }}>{unreadCount} unread</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '280px', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '260px', overflowY: 'auto' }}>
                 {notifications.map(n => (
                   <div
                     key={n.id}
                     style={{
-                      padding: '10px',
-                      borderRadius: '8px',
-                      backgroundColor: n.read ? 'transparent' : 'var(--hw-bg)',
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      backgroundColor: n.read ? 'transparent' : '#f8fafc',
                       border: '1px solid var(--hw-border)',
                       fontSize: '12px'
                     }}
                   >
-                    <div style={{ fontWeight: 600, color: 'var(--hw-text-main)', marginBottom: '3px' }}>
-                      {n.title}
-                    </div>
-                    <div style={{ color: 'var(--hw-text-muted)', lineHeight: '1.4' }}>
-                      {n.message}
-                    </div>
-                    <div style={{ fontSize: '10px', color: 'var(--hw-text-subtle)', marginTop: '6px' }}>
-                      {n.time}
-                    </div>
+                    <div style={{ fontWeight: 600, color: 'var(--hw-text-main)' }}>{n.title}</div>
+                    <div style={{ color: 'var(--hw-text-muted)', fontSize: '11px', marginTop: '2px' }}>{n.message}</div>
                   </div>
                 ))}
               </div>
@@ -184,43 +128,37 @@ export const Header = ({ onOpenMobileMenu }) => {
           )}
         </div>
 
-        {/* User Profile Pill Menu */}
+        {/* User Avatar + Name + Dropdown (Panel 2 Reference) */}
         <div style={{ position: 'relative' }}>
           <div
-            className="hw-user-profile-badge"
+            className="hw-user-pill-ref"
             onClick={() => setShowProfileMenu(!showProfileMenu)}
             role="button"
             tabIndex={0}
           >
-            <div className="hw-avatar">
-              {user.fullName.charAt(0)}
+            <div className="hw-avatar-ref">
+              {/* Stylized avatar initials or photo */}
+              <span>{user.fullName.charAt(0)}</span>
             </div>
-            <div className="hw-user-meta">
-              <span className="hw-user-name">{user.fullName.split(' ')[0]}</span>
-              <span className="hw-user-id">{user.bloodGroup} • {user.id}</span>
-            </div>
+            <span className="hw-user-name-ref">{user.fullName.split(' ')[0]}</span>
+            <ChevronDownIcon size={14} color="#64748b" />
           </div>
 
           {showProfileMenu && (
             <div
               style={{
                 position: 'absolute',
-                top: '48px',
+                top: '44px',
                 right: 0,
-                width: '220px',
+                width: '200px',
                 backgroundColor: '#ffffff',
                 border: '1px solid var(--hw-border)',
-                borderRadius: 'var(--hw-radius-lg)',
-                boxShadow: 'var(--hw-shadow-xl)',
-                padding: '8px',
+                borderRadius: 'var(--hw-radius-md)',
+                boxShadow: 'var(--hw-shadow-lg)',
+                padding: '6px',
                 zIndex: 1000
               }}
             >
-              <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--hw-border)', marginBottom: '6px' }}>
-                <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--hw-text-main)' }}>{user.fullName}</div>
-                <div style={{ fontSize: '11px', color: 'var(--hw-text-muted)' }}>{user.phone}</div>
-              </div>
-
               <button
                 type="button"
                 style={{
@@ -241,8 +179,8 @@ export const Header = ({ onOpenMobileMenu }) => {
                   setShowProfileMenu(false);
                 }}
               >
-                <UserIcon size={15} />
-                <span>My Profile & Settings</span>
+                <UserIcon size={14} />
+                <span>My Profile</span>
               </button>
 
               <button
@@ -265,11 +203,11 @@ export const Header = ({ onOpenMobileMenu }) => {
                   setShowProfileMenu(false);
                 }}
               >
-                <QrCodeIcon size={15} />
-                <span>Offline Health Pass</span>
+                <QrCodeIcon size={14} />
+                <span>Offline Wallet</span>
               </button>
 
-              <div style={{ borderTop: '1px solid var(--hw-border)', margin: '6px 0' }} />
+              <div style={{ borderTop: '1px solid var(--hw-border)', margin: '4px 0' }} />
 
               <button
                 type="button"

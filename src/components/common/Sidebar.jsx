@@ -20,13 +20,13 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
 
   const navItems = [
     { id: 'dashboard', label: 'Overview', icon: ActivityIcon },
-    { id: 'records', label: 'Health Records', icon: FileTextIcon, badge: '5' },
-    { id: 'scan', label: 'Scan Report', icon: CameraIcon, badge: 'AI' },
-    { id: 'medicines', label: 'Medicines', icon: PillIcon, badge: '3' },
-    { id: 'family', label: 'Family', icon: UsersIcon, badge: '4' },
+    { id: 'records', label: 'Health Records', icon: FileTextIcon },
+    { id: 'scan', label: 'Scan Report', icon: CameraIcon },
+    { id: 'medicines', label: 'Medicines', icon: PillIcon },
+    { id: 'family', label: 'Family', icon: UsersIcon },
     { id: 'blood-donation', label: 'Blood Donation', icon: DropletIcon },
     { id: 'organ-donation', label: 'Organ Donation', icon: HeartHandshakeIcon },
-    { id: 'emergency', label: 'Emergency', icon: AlertTriangleIcon, isEmergency: true },
+    { id: 'emergency', label: 'Emergency', icon: AlertTriangleIcon },
     { id: 'offline', label: 'Offline Wallet', icon: QrCodeIcon },
     { id: 'settings', label: 'Settings', icon: SettingsIcon }
   ];
@@ -60,34 +60,21 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
         )}
       </div>
 
-      {/* Navigation List */}
+      {/* Navigation List matching Panel 2 of Reference UI */}
       <nav className="hw-sidebar-nav" aria-label="Main Navigation">
-        <span className="hw-nav-section-title">Healthcare Services</span>
         {navItems.map((item) => {
           const IconComp = item.icon;
           const isActive = currentRoute === item.id;
-          const isEmergency = item.isEmergency;
 
           return (
             <button
               key={item.id}
               type="button"
-              className={`hw-nav-item ${isActive ? 'active' : ''} ${isEmergency ? 'hw-nav-item-emergency' : ''}`}
+              className={`hw-nav-item ${isActive ? 'active' : ''}`}
               onClick={() => handleNavClick(item.id)}
             >
-              <IconComp size={18} />
+              <IconComp size={18} color={isActive ? '#ffffff' : '#64748b'} />
               <span>{item.label}</span>
-              {item.badge && (
-                <span
-                  className="hw-nav-badge"
-                  style={{
-                    backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : 'var(--hw-bg-subtle)',
-                    color: isActive ? '#ffffff' : 'var(--hw-text-muted)'
-                  }}
-                >
-                  {item.badge}
-                </span>
-              )}
             </button>
           );
         })}
@@ -99,7 +86,7 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
           <span className={`hw-status-dot ${isOfflineSimulated ? 'hw-status-dot-amber' : 'hw-status-dot-green'}`} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <strong style={{ fontSize: '11px', color: 'var(--hw-text-main)' }}>
-              {isOfflineSimulated ? 'Offline Mode Active' : 'Online & Synchronized'}
+              {isOfflineSimulated ? 'Offline Mode' : 'Synchronized'}
             </strong>
             <span style={{ fontSize: '10px' }}>Synced: {lastSynced.split(',')[1] || lastSynced}</span>
           </div>

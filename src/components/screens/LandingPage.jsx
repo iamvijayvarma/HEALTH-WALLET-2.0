@@ -84,7 +84,7 @@ export const LandingPage = () => {
         <div>
           <div className="hw-landing-badge">
             <ShieldCheckIcon size={16} />
-            <span>Official Public Health Infrastructure Standard</span>
+            <span>Secure Citizen Healthcare Platform</span>
           </div>
 
           <h1 className="hw-landing-title">
@@ -106,13 +106,13 @@ export const LandingPage = () => {
 
           <div style={{ marginTop: '28px', display: 'flex', gap: '20px', color: 'var(--hw-text-muted)', fontSize: '13px' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <CheckCircleIcon size={16} color="var(--hw-green)" /> ABDM Compliant
+              <CheckCircleIcon size={16} color="var(--hw-green)" /> Standardized Formats
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <CheckCircleIcon size={16} color="var(--hw-green)" /> 256-Bit Cryptography
+              <CheckCircleIcon size={16} color="var(--hw-green)" /> Encrypted Storage
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <CheckCircleIcon size={16} color="var(--hw-green)" /> 100% Consent Governed
+              <CheckCircleIcon size={16} color="var(--hw-green)" /> Consent-Based Access
             </span>
           </div>
         </div>
@@ -272,10 +272,10 @@ export const LandingPage = () => {
               Security & Standards
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
-              <span>ISO 27001 Certified Infrastructure</span>
-              <span>Ayushman Bharat ABDM M1/M2/M3</span>
+              <span>Secure Cloud Infrastructure</span>
+              <span>Standardized Clinical Data</span>
               <span>Zero Unapproved Data Sharing</span>
-              <span>Digital Personal Data Protection Act</span>
+              <span>Privacy-First Architecture</span>
             </div>
           </div>
         </div>

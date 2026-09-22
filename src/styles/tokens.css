@@ -1,68 +1,55 @@
 /* ==========================================================================
    HEALTH WALLET DESIGN SYSTEM TOKENS
-   Theme: Institutional Public-Health & Trust
+   Reference: Modern, Professional, Institutional Public Health Platform
+   Primary Visual Source of Truth: Health Wallet Reference UI
    ========================================================================== */
 
 :root {
-  /* Brand Primary Colors - Deep Trust Blue */
-  --hw-primary-50: #eff6ff;
-  --hw-primary-100: #dbeafe;
-  --hw-primary-200: #bfdbfe;
-  --hw-primary-300: #93c5fd;
-  --hw-primary-400: #60a5fa;
-  --hw-primary-500: #1d4ed8;
-  --hw-primary: #0f4c81;        /* Institutional Deep Blue */
-  --hw-primary-hover: #0a3861;  /* Darker on hover */
-  --hw-primary-active: #072744;
-  --hw-primary-light: #e9f2fa;  /* Subtle tinted background */
+  /* Brand Primary - Healthcare Royal/Deep Blue */
+  --hw-primary: #1e56a0;         /* Primary brand blue from reference */
+  --hw-primary-hover: #164684;   /* Darker on hover */
+  --hw-primary-active: #0f3566;  /* Active click */
+  --hw-primary-light: #eef5fc;   /* Soft tinted blue background */
+  --hw-primary-border: #bfdbfe;  /* Border accent */
 
-  /* Healthcare Secondary Colors - Teal & Emerald Green */
-  --hw-teal-50: #f0fdfa;
-  --hw-teal-100: #ccfbf1;
-  --hw-teal-500: #14b8a6;
+  /* Supporting Healthcare Teal & Emerald Green */
   --hw-teal: #0d9488;
-  --hw-teal-hover: #0f766e;
   --hw-teal-light: #f0fdfa;
+  --hw-teal-border: #99f6e4;
 
-  --hw-green-50: #ecfdf5;
-  --hw-green-100: #d1fae5;
-  --hw-green-500: #10b981;
-  --hw-green: #059669;
-  --hw-green-hover: #047857;
+  --hw-green: #10b981;           /* Vibrant healthcare green */
+  --hw-green-hover: #059669;
   --hw-green-light: #ecfdf5;
+  --hw-green-border: #a7f3d0;
 
-  /* Emergency Red - Strictly reserved for critical & emergency actions */
-  --hw-danger-50: #fef2f2;
-  --hw-danger-100: #fee2e2;
-  --hw-danger-200: #fecaca;
-  --hw-danger-500: #ef4444;
-  --hw-danger: #dc2626;         /* Crimson Emergency Red */
+  /* Emergency Crimson Red - Strictly for urgent/emergency actions */
+  --hw-danger: #dc2626;          /* Crimson emergency red */
   --hw-danger-hover: #b91c1c;
   --hw-danger-light: #fef2f2;
+  --hw-danger-border: #fecaca;
 
-  /* Warning Amber - Strictly for precautions & pending states */
-  --hw-warning-50: #fffbeb;
-  --hw-warning-100: #fef3c7;
-  --hw-warning-500: #f59e0b;
-  --hw-warning: #d97706;
+  /* Precaution / Warning Amber */
+  --hw-warning: #f59e0b;
+  --hw-warning-hover: #d97706;
   --hw-warning-light: #fffbeb;
+  --hw-warning-border: #fde68a;
 
-  /* Surface & Background Neutrals - Crisp, clean, institutional */
-  --hw-bg: #f8fafc;             /* Slate 50 */
-  --hw-bg-subtle: #f1f5f9;      /* Slate 100 */
-  --hw-surface: #ffffff;        /* Pure White Card */
-  --hw-surface-raised: #ffffff;
-  
+  /* Surface & Background Neutrals - Clean, light, institutional */
+  --hw-bg: #f4f6f9;              /* Neutral canvas background from reference */
+  --hw-bg-subtle: #f8fafc;       /* Off-white / light slate */
+  --hw-surface: #ffffff;         /* Pure white cards */
+  --hw-surface-hover: #fafbfc;
+
   /* Borders */
   --hw-border-subtle: #f1f5f9;
-  --hw-border: #e2e8f0;         /* Slate 200 */
-  --hw-border-strong: #cbd5e1;  /* Slate 300 */
+  --hw-border: #e5e9f0;          /* Clean thin border from reference */
+  --hw-border-strong: #cbd5e1;
 
   /* Typography Colors */
-  --hw-text-main: #0f172a;       /* Slate 900 */
-  --hw-text-body: #334155;       /* Slate 700 */
-  --hw-text-muted: #64748b;      /* Slate 500 */
-  --hw-text-subtle: #94a3b8;     /* Slate 400 */
+  --hw-text-main: #0f172a;        /* Deep slate for headings & primary text */
+  --hw-text-body: #334155;        /* Neutral body text */
+  --hw-text-muted: #64748b;       /* Subtle text for subtitles and labels */
+  --hw-text-subtle: #94a3b8;      /* Placeholder and tertiary labels */
   --hw-text-inverse: #ffffff;
 
   /* Typography Scale */
@@ -76,37 +63,34 @@
   --hw-text-xl: 1.25rem;    /* 20px */
   --hw-text-2xl: 1.5rem;    /* 24px */
   --hw-text-3xl: 1.875rem;  /* 30px */
-  --hw-text-4xl: 2.25rem;   /* 36px */
 
   --hw-weight-regular: 400;
   --hw-weight-medium: 500;
   --hw-weight-semibold: 600;
   --hw-weight-bold: 700;
 
-  /* Radius */
+  /* Corner Radius - Clean, modern, medium rounded corners */
   --hw-radius-xs: 4px;
   --hw-radius-sm: 6px;
-  --hw-radius-md: 10px;     /* Default medium modern */
-  --hw-radius-lg: 14px;
-  --hw-radius-xl: 18px;
-  --hw-radius-full: 9999px;
+  --hw-radius-md: 8px;      /* Buttons, inputs, small elements */
+  --hw-radius-lg: 12px;     /* Standard cards from reference */
+  --hw-radius-xl: 16px;     /* Large hero cards & modals */
+  --hw-radius-full: 9999px; /* Pills & circular avatars */
 
-  /* Subtle Professional Shadows */
+  /* Subtle Soft Shadows */
   --hw-shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
-  --hw-shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
-  --hw-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
-  --hw-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
-  --hw-shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  --hw-shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+  --hw-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.03);
+  --hw-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.07), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
+  --hw-shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
 
   /* Layout Dimensions */
-  --hw-sidebar-width: 260px;
-  --hw-sidebar-collapsed: 72px;
-  --hw-header-height: 68px;
-  --hw-mobile-nav-height: 64px;
-  --hw-container-max: 1240px;
+  --hw-sidebar-width: 250px;
+  --hw-header-height: 64px;
+  --hw-mobile-nav-height: 62px;
+  --hw-container-max: 1180px;
 
   /* Transitions */
   --hw-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --hw-transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --hw-transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
 }

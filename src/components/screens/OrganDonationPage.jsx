@@ -1,329 +1,238 @@
 import React, { useState } from 'react';
 import { useHealthWallet } from '../../context/HealthWalletContext';
-import { Button } from '../common/Button';
-import { Badge } from '../common/Badge';
 import { Modal } from '../common/Modal';
 import {
   HeartHandshakeIcon,
   CheckCircleIcon,
-  ShieldCheckIcon,
   DownloadIcon,
   EditIcon,
-  TrashIcon,
-  AlertTriangleIcon,
-  InfoIcon,
   PrinterIcon
 } from '../common/Icons';
 
 export const OrganDonationPage = () => {
-  const { organPledge, updateOrganPledge, revokeOrganPledge, user, addToast } = useHealthWallet();
+  const { organPledge, updateOrganPledge, revokeOrganPledge, user, addToast, navigate } = useHealthWallet();
 
+  const [activeTab, setActiveTab] = useState('organ');
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRevokeModal, setShowRevokeModal] = useState(false);
 
-  // Preference selection state
-  const [selectedOrgans, setSelectedOrgans] = useState(organPledge.organsSelected || [
-    'Corneas (Eyes)',
-    'Kidneys',
-    'Liver',
-    'Heart',
-    'Lungs'
-  ]);
+  const availableOrgans = ['Corneas (Eyes)', 'Kidneys', 'Liver', 'Heart', 'Lungs'];
+  const [selectedOrgans, setSelectedOrgans] = useState(organPledge.organsSelected || availableOrgans);
 
-  const availableOrgans = [
-    'Corneas (Eyes)',
-    'Kidneys',
-    'Liver',
-    'Heart',
-    'Lungs',
-    'Pancreas',
-    'Small Bowel'
-  ];
-
-  const availableTissues = [
-    'Skin',
-    'Bone & Tendons',
-    'Heart Valves',
-    'Blood Vessels'
-  ];
-
-  const [selectedTissues, setSelectedTissues] = useState(organPledge.tissueSelected || ['Skin', 'Bone']);
-
-  const toggleOrgan = (item) => {
+  const toggleOrgan = (org) => {
     setSelectedOrgans(prev =>
-      prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
-    );
-  };
-
-  const toggleTissue = (item) => {
-    setSelectedTissues(prev =>
-      prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
+      prev.includes(org) ? prev.filter(o => o !== org) : [...prev, org]
     );
   };
 
   const handleSavePreferences = () => {
-    updateOrganPledge({
-      organsSelected: selectedOrgans,
-      tissueSelected: selectedTissues
-    });
+    updateOrganPledge({ organsSelected: selectedOrgans });
     setShowEditModal(false);
+    addToast('Donation preferences updated', 'success');
   };
 
   const handleConfirmRevoke = () => {
     revokeOrganPledge();
     setShowRevokeModal(false);
+    addToast('Pledge revoked', 'info');
   };
 
   return (
     <div>
-      {/* Page Header */}
-      <div className="hw-page-header">
-        <div className="hw-page-header-text">
-          <h1>National Organ Donation Registry</h1>
-          <p>Official registry of citizen intention to donate organs and tissues.</p>
-        </div>
-        <div>
-          <span className="hw-badge hw-badge-teal">NOTTO Framework Standard</span>
-        </div>
+      {/* 1. Tabs matching Panel 7 Reference UI */}
+      <div className="hw-tabs" style={{ marginBottom: '24px' }}>
+        <button
+          type="button"
+          className={`hw-tab-btn ${activeTab === 'blood' ? 'active' : ''}`}
+          onClick={() => navigate('blood-donation')}
+        >
+          <span>Blood Donation</span>
+        </button>
+        <button
+          type="button"
+          className={`hw-tab-btn ${activeTab === 'organ' ? 'active' : ''}`}
+          onClick={() => setActiveTab('organ')}
+        >
+          <span>Organ Donation</span>
+        </button>
       </div>
 
-      {/* Mandatory Public Health Clarification */}
-      <div className="hw-alert hw-alert-info" style={{ alignItems: 'center' }}>
-        <InfoIcon size={20} />
+      {/* 2. Official Communication Notice */}
+      <div className="hw-alert hw-alert-info" style={{ marginBottom: '24px' }}>
         <span style={{ fontSize: '13px' }}>
-          <strong>Official Declaration:</strong> This is a voluntary intention pledge registry under national public health statutes. This is <strong>not</strong> an organ allocation or commercial exchange system. Organs are allocated strictly by regional clinical waitlists during brainstem death protocols.
+          <strong>Notice:</strong> This module records donation intention and consent. It is not an organ allocation system. Organs are allocated strictly through medical waitlists in accordance with statutory public health guidelines.
         </span>
       </div>
 
-      {/* Registered Status Banner or Registration Trigger */}
-      {organPledge.isRegistered ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '24px', marginBottom: '28px' }}>
-          {/* Digital Donor Card Display */}
-          <div className="hw-card" style={{ background: 'linear-gradient(135deg, #0f4c81 0%, #1e3a8a 100%)', color: '#ffffff', padding: '28px', borderRadius: '16px', position: 'relative', overflow: 'hidden' }}>
-            {/* Background watermark */}
-            <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', opacity: 0.08 }}>
-              <HeartHandshakeIcon size={220} color="#ffffff" />
-            </div>
-
+      {/* 3. Organ Donation Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '24px' }}>
+        {/* Digital Pledge Card */}
+        <div
+          className="hw-card"
+          style={{
+            background: 'linear-gradient(135deg, var(--hw-primary) 0%, #1e3a8a 100%)',
+            color: '#ffffff',
+            borderRadius: '14px',
+            padding: '28px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}
+        >
+          <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
               <div>
-                <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#93c5fd' }}>
-                  National Digital Health Mission
-                </span>
-                <h2 style={{ fontSize: '20px', fontWeight: 700, margin: '2px 0 0 0' }}>
-                  Official Organ Donor Card
+                <div style={{ fontSize: '11px', color: '#93c5fd', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  National Healthcare Registry
+                </div>
+                <h2 style={{ fontSize: '18px', fontWeight: 700, margin: '2px 0 0 0' }}>
+                  Digital Organ Donor Card
                 </h2>
               </div>
-              <div style={{ width: '38px', height: '38px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <HeartHandshakeIcon size={20} color="#ffffff" />
-              </div>
+              <HeartHandshakeIcon size={24} color="#ffffff" />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px', marginBottom: '20px', fontSize: '13px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '14px', marginBottom: '18px', fontSize: '13px' }}>
               <div>
-                <div style={{ color: '#bfdbfe', fontSize: '11px' }}>Donor Legal Name</div>
-                <strong style={{ fontSize: '16px' }}>{user.fullName}</strong>
-                <div style={{ color: '#bfdbfe', fontSize: '11px', marginTop: '8px' }}>Pledge ID</div>
-                <div style={{ fontFamily: 'var(--hw-font-mono)', fontSize: '13px', fontWeight: 600 }}>{organPledge.pledgeId}</div>
+                <div style={{ color: '#bfdbfe', fontSize: '11px' }}>Donor Name</div>
+                <strong style={{ fontSize: '15px' }}>{user.fullName}</strong>
+                <div style={{ color: '#bfdbfe', fontSize: '11px', marginTop: '6px' }}>Pledge ID</div>
+                <div style={{ fontFamily: 'var(--hw-font-mono)', fontSize: '12px' }}>{organPledge.pledgeId}</div>
               </div>
 
               <div>
                 <div style={{ color: '#bfdbfe', fontSize: '11px' }}>Blood Group</div>
-                <strong style={{ fontSize: '16px', color: '#fca5a5' }}>{user.bloodGroup}</strong>
-                <div style={{ color: '#bfdbfe', fontSize: '11px', marginTop: '8px' }}>Registered Date</div>
+                <strong style={{ fontSize: '15px', color: '#fca5a5' }}>{user.bloodGroup}</strong>
+                <div style={{ color: '#bfdbfe', fontSize: '11px', marginTop: '6px' }}>Date</div>
                 <div>{organPledge.registrationDate}</div>
               </div>
             </div>
 
-            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px' }}>
-              <div style={{ fontSize: '11px', color: '#bfdbfe', marginBottom: '4px' }}>Pledged Organs & Tissues:</div>
-              <div style={{ fontSize: '12px', fontWeight: 500, lineHeight: '1.4' }}>
-                {organPledge.organsSelected?.join(', ')}
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#bfdbfe', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '14px' }}>
-              <div>Next of Kin Informed: <strong>{organPledge.nomineeName} ({organPledge.nomineeRelation})</strong></div>
-              <span className="hw-badge hw-badge-teal" style={{ background: '#059669', color: '#ffffff', border: 'none' }}>
-                Verified Pledge
-              </span>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '10px 14px', borderRadius: '8px', fontSize: '12px', marginBottom: '16px' }}>
+              <div style={{ color: '#bfdbfe', fontSize: '11px', marginBottom: '2px' }}>Pledged Organs:</div>
+              <strong>{organPledge.organsSelected?.join(', ')}</strong>
             </div>
           </div>
 
-          {/* Donor Controls & Information */}
-          <div className="hw-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <div>
-              <div className="hw-card-header">
-                <h3 className="hw-card-title">
-                  <ShieldCheckIcon size={18} color="var(--hw-primary)" />
-                  <span>Pledge Governance</span>
-                </h3>
-              </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '14px', fontSize: '11px', color: '#bfdbfe' }}>
+            <span>Next of Kin: <strong>{organPledge.nomineeName}</strong></span>
+            <span className="hw-badge hw-badge-green" style={{ background: '#059669', color: '#ffffff', border: 'none' }}>
+              Pledge Active
+            </span>
+          </div>
+        </div>
 
-              <p style={{ fontSize: '13px', color: 'var(--hw-text-muted)', lineHeight: '1.6', marginBottom: '16px' }}>
-                Your decision to pledge organs is completely voluntary and can be altered, amended, or revoked at any time by your own request.
+        {/* Management Card */}
+        <div className="hw-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <h3 className="hw-card-title" style={{ marginBottom: '12px' }}>Pledge Preferences</h3>
+            <p style={{ fontSize: '13px', color: 'var(--hw-text-muted)', lineHeight: '1.5', margin: '0 0 16px 0' }}>
+              Your organ donation pledge is voluntary and may be modified or revoked at any time.
+            </p>
+
+            <div style={{ background: 'var(--hw-bg)', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '12px' }}>
+              <div style={{ fontWeight: 600, color: 'var(--hw-text-main)', marginBottom: '4px' }}>Informed Consent</div>
+              <p style={{ color: 'var(--hw-text-muted)', margin: 0 }}>
+                Next of kin ({organPledge.nomineeName}) is informed of your decision in accordance with statutory guidelines.
               </p>
-
-              <div style={{ background: 'var(--hw-bg)', padding: '14px', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--hw-border)' }}>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--hw-text-main)', marginBottom: '4px' }}>
-                  Next of Kin Authorization
-                </div>
-                <p style={{ fontSize: '12px', color: 'var(--hw-text-muted)', margin: 0 }}>
-                  Under statutory transplant rules, your family member <strong>{organPledge.nomineeName}</strong> has been designated to reaffirm your intention in a critical medical event.
-                </p>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <Button
-                variant="primary"
-                fullWidth
-                icon={PrinterIcon}
-                onClick={() => alert(`Printing official digital organ donor card for ${user.fullName}`)}
-              >
-                Download Official Donor Certificate
-              </Button>
-
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <Button
-                  variant="secondary"
-                  fullWidth
-                  size="sm"
-                  icon={EditIcon}
-                  onClick={() => setShowEditModal(true)}
-                >
-                  Edit Organ Preferences
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  style={{ color: 'var(--hw-danger)' }}
-                  onClick={() => setShowRevokeModal(true)}
-                >
-                  Revoke
-                </Button>
-              </div>
             </div>
           </div>
-        </div>
-      ) : (
-        /* Not Registered Yet Banner */
-        <div className="hw-card" style={{ textAlign: 'center', padding: '48px 24px' }}>
-          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--hw-primary-light)', color: 'var(--hw-primary)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
-            <HeartHandshakeIcon size={32} />
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <button
+              type="button"
+              className="hw-btn hw-btn-secondary hw-btn-sm"
+              onClick={() => setShowEditModal(true)}
+            >
+              <EditIcon size={14} />
+              <span>Edit Organ Preferences</span>
+            </button>
+
+            <button
+              type="button"
+              className="hw-btn hw-btn-ghost hw-btn-sm"
+              onClick={() => setShowRevokeModal(true)}
+              style={{ color: 'var(--hw-danger)' }}
+            >
+              Revoke Intention
+            </button>
           </div>
-          <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--hw-text-main)', marginBottom: '8px' }}>
-            Register Your Intention to Give Life
-          </h2>
-          <p style={{ fontSize: '14px', color: 'var(--hw-text-muted)', maxWidth: '520px', margin: '0 auto 24px auto', lineHeight: '1.6' }}>
-            One organ donor can save up to eight lives and enhance over seventy-five more through tissue donation. Pledging takes only a minute.
-          </p>
-          <Button variant="primary" size="lg" icon={HeartHandshakeIcon} onClick={() => setShowEditModal(true)}>
-            Register Organ Donation Pledge
-          </Button>
         </div>
-      )}
+      </div>
 
       {/* Edit Preferences Modal */}
       {showEditModal && (
         <Modal
           isOpen={true}
           onClose={() => setShowEditModal(false)}
-          title="Organ & Tissue Donation Preferences"
+          title="Edit Organ Donation Preferences"
           footer={
             <>
-              <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+              <button
+                type="button"
+                className="hw-btn hw-btn-secondary"
+                onClick={() => setShowEditModal(false)}
+              >
                 Cancel
-              </Button>
-              <Button variant="primary" onClick={handleSavePreferences}>
-                Confirm & Update Pledge
-              </Button>
+              </button>
+              <button
+                type="button"
+                className="hw-btn hw-btn-primary"
+                onClick={handleSavePreferences}
+              >
+                Save Preferences
+              </button>
             </>
           }
         >
           <div>
-            <p style={{ fontSize: '13px', color: 'var(--hw-text-muted)', marginBottom: '16px' }}>
-              Select which organs and tissues you voluntarily consent to donate upon brainstem death:
+            <p style={{ fontSize: '13px', color: 'var(--hw-text-muted)', marginBottom: '14px' }}>
+              Select organs you voluntarily consent to pledge:
             </p>
-
-            <div style={{ marginBottom: '18px' }}>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--hw-primary)', textTransform: 'uppercase', marginBottom: '8px' }}>
-                Major Organs
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-                {availableOrgans.map(org => (
-                  <label key={org} className="hw-checkbox-label">
-                    <input
-                      type="checkbox"
-                      className="hw-checkbox"
-                      checked={selectedOrgans.includes(org)}
-                      onChange={() => toggleOrgan(org)}
-                    />
-                    <span style={{ fontSize: '13px' }}>{org}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '18px' }}>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--hw-primary)', textTransform: 'uppercase', marginBottom: '8px' }}>
-                Tissues
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-                {availableTissues.map(tiss => (
-                  <label key={tiss} className="hw-checkbox-label">
-                    <input
-                      type="checkbox"
-                      className="hw-checkbox"
-                      checked={selectedTissues.includes(tiss)}
-                      onChange={() => toggleTissue(tiss)}
-                    />
-                    <span style={{ fontSize: '13px' }}>{tiss}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="hw-alert hw-alert-info">
-              <span style={{ fontSize: '12px' }}>
-                Family consent acknowledgment will be updated. Your pledge is encrypted and linked to your National ABHA ID.
-              </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {availableOrgans.map(org => (
+                <label key={org} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedOrgans.includes(org)}
+                    onChange={() => toggleOrgan(org)}
+                  />
+                  <span>{org}</span>
+                </label>
+              ))}
             </div>
           </div>
         </Modal>
       )}
 
-      {/* Revoke Confirmation Modal */}
+      {/* Revoke Modal */}
       {showRevokeModal && (
         <Modal
           isOpen={true}
           onClose={() => setShowRevokeModal(false)}
-          title="Revoke Organ Donation Pledge"
+          title="Revoke Organ Donation Intention"
           footer={
             <>
-              <Button variant="secondary" onClick={() => setShowRevokeModal(false)}>
-                Keep Active Pledge
-              </Button>
-              <Button variant="danger" onClick={handleConfirmRevoke}>
+              <button
+                type="button"
+                className="hw-btn hw-btn-secondary"
+                onClick={() => setShowRevokeModal(false)}
+              >
+                Keep Active
+              </button>
+              <button
+                type="button"
+                className="hw-btn hw-btn-danger"
+                onClick={handleConfirmRevoke}
+              >
                 Confirm Revocation
-              </Button>
+              </button>
             </>
           }
         >
-          <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-            <div style={{ color: 'var(--hw-danger)', flexShrink: 0 }}>
-              <AlertTriangleIcon size={24} />
-            </div>
-            <div>
-              <h4 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--hw-text-main)', margin: '0 0 6px 0' }}>
-                Are you sure you want to revoke your organ donor pledge?
-              </h4>
-              <p style={{ fontSize: '13px', color: 'var(--hw-text-muted)', lineHeight: '1.5', margin: 0 }}>
-                Your record will be safely removed from the National Organ Donation registry. You are free to re-register your voluntary pledge at any future date.
-              </p>
-            </div>
-          </div>
+          <p style={{ fontSize: '13px', color: 'var(--hw-text-muted)', margin: 0 }}>
+            Are you sure you want to revoke your registered organ donation intention? Your pledge record will be cleared.
+          </p>
         </Modal>
       )}
     </div>
