@@ -338,3 +338,14 @@ export const HeartHandshakeIcon = (props) => (
     <path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08v0c.82.82 2.13.85 3 .07l2.07-1.9" />
   </Icon>
 );
+
+export const SwitchCameraIcon = (props) => (
+  <Icon {...props}>
+    <path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" />
+    <path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5" />
+    <circle cx="12" cy="12" r="3" />
+    <path d="m18 22-3-3 3-3" />
+    <path d="m6 2 3 3-3 3" />
+  </Icon>
+);
+

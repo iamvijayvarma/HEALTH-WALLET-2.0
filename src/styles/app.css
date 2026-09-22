@@ -290,3 +290,284 @@ button, input, select, textarea {
   accent-color: var(--hw-primary);
   cursor: pointer;
 }
+
+/* ==========================================================================
+   REAL DEVICE CAMERA SCANNER STYLES
+   ========================================================================== */
+.hw-camera-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto 28px auto;
+  background-color: #0b1120;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--hw-border);
+}
+
+.hw-camera-viewport {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  background-color: #000000;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .hw-camera-viewport {
+    height: 320px;
+  }
+}
+
+.hw-camera-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Medical Report Guide Overlay */
+.hw-camera-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+
+.hw-camera-topbar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: auto;
+  z-index: 5;
+}
+
+.hw-camera-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hw-camera-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  animation: hwCameraPulse 1.5s infinite;
+}
+
+@keyframes hwCameraPulse {
+  0% { transform: scale(0.9); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.4; }
+  100% { transform: scale(0.9); opacity: 1; }
+}
+
+.hw-camera-icon-btn {
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.hw-camera-icon-btn:hover {
+  background: rgba(30, 41, 59, 0.95);
+  transform: scale(1.08);
+}
+
+/* Document Frame / Corner Guides */
+.hw-camera-frame {
+  position: absolute;
+  top: 48%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 82%;
+  height: 68%;
+  max-width: 480px;
+  border-radius: 8px;
+  pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.42);
+}
+
+/* Four Corner Brackets */
+.hw-camera-corner {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border-color: #38bdf8;
+  border-style: solid;
+  pointer-events: none;
+}
+.hw-camera-corner-tl {
+  top: -2px;
+  left: -2px;
+  border-width: 3.5px 0 0 3.5px;
+  border-top-left-radius: 8px;
+}
+.hw-camera-corner-tr {
+  top: -2px;
+  right: -2px;
+  border-width: 3.5px 3.5px 0 0;
+  border-top-right-radius: 8px;
+}
+.hw-camera-corner-bl {
+  bottom: -2px;
+  left: -2px;
+  border-width: 0 0 3.5px 3.5px;
+  border-bottom-left-radius: 8px;
+}
+.hw-camera-corner-br {
+  bottom: -2px;
+  right: -2px;
+  border-width: 0 3.5px 3.5px 0;
+  border-bottom-right-radius: 8px;
+}
+
+/* Animated Laser Scan Guide */
+.hw-camera-scan-laser {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #38bdf8, #22c55e, #38bdf8, transparent);
+  box-shadow: 0 0 10px #38bdf8, 0 0 16px rgba(34, 197, 94, 0.6);
+  animation: hwCameraScanMove 3s infinite ease-in-out alternate;
+}
+
+@keyframes hwCameraScanMove {
+  0% { top: 8%; opacity: 0.3; }
+  50% { opacity: 0.9; }
+  100% { top: 92%; opacity: 0.3; }
+}
+
+.hw-camera-guide-hint {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(6px);
+  color: #e2e8f0;
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Bottom Bar Controls */
+.hw-camera-bottombar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  pointer-events: auto;
+  z-index: 5;
+  padding: 6px 0;
+}
+
+.hw-camera-shutter-btn {
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 4px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+  outline: none;
+}
+
+.hw-camera-shutter-btn:hover {
+  transform: scale(1.08);
+  border-color: rgba(255, 255, 255, 0.9);
+}
+
+.hw-camera-shutter-btn:active {
+  transform: scale(0.94);
+}
+
+.hw-camera-shutter-inner {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--hw-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+}
+
+/* Captured Preview Container */
+.hw-captured-preview-card {
+  border: 1px solid var(--hw-border);
+  border-radius: 14px;
+  padding: 24px;
+  background-color: #ffffff;
+  margin-bottom: 28px;
+  box-shadow: var(--hw-shadow-xs);
+}
+
+.hw-captured-image-box {
+  width: 100%;
+  max-width: 500px;
+  max-height: 320px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--hw-border);
+  box-shadow: var(--hw-shadow-xs);
+  background: #0f172a;
+  margin: 14px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hw-captured-image-box img {
+  max-width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  display: block;
+}
+
+/* Camera Status & Error States */
+.hw-camera-state-box {
+  background: #ffffff;
+  border: 1px solid var(--hw-border);
+  border-radius: 14px;
+  padding: 40px 24px;
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto 28px auto;
+}
+
