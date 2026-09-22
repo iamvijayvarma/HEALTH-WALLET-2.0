@@ -1,0 +1,112 @@
+/* ==========================================================================
+   HEALTH WALLET DESIGN SYSTEM TOKENS
+   Theme: Institutional Public-Health & Trust
+   ========================================================================== */
+
+:root {
+  /* Brand Primary Colors - Deep Trust Blue */
+  --hw-primary-50: #eff6ff;
+  --hw-primary-100: #dbeafe;
+  --hw-primary-200: #bfdbfe;
+  --hw-primary-300: #93c5fd;
+  --hw-primary-400: #60a5fa;
+  --hw-primary-500: #1d4ed8;
+  --hw-primary: #0f4c81;        /* Institutional Deep Blue */
+  --hw-primary-hover: #0a3861;  /* Darker on hover */
+  --hw-primary-active: #072744;
+  --hw-primary-light: #e9f2fa;  /* Subtle tinted background */
+
+  /* Healthcare Secondary Colors - Teal & Emerald Green */
+  --hw-teal-50: #f0fdfa;
+  --hw-teal-100: #ccfbf1;
+  --hw-teal-500: #14b8a6;
+  --hw-teal: #0d9488;
+  --hw-teal-hover: #0f766e;
+  --hw-teal-light: #f0fdfa;
+
+  --hw-green-50: #ecfdf5;
+  --hw-green-100: #d1fae5;
+  --hw-green-500: #10b981;
+  --hw-green: #059669;
+  --hw-green-hover: #047857;
+  --hw-green-light: #ecfdf5;
+
+  /* Emergency Red - Strictly reserved for critical & emergency actions */
+  --hw-danger-50: #fef2f2;
+  --hw-danger-100: #fee2e2;
+  --hw-danger-200: #fecaca;
+  --hw-danger-500: #ef4444;
+  --hw-danger: #dc2626;         /* Crimson Emergency Red */
+  --hw-danger-hover: #b91c1c;
+  --hw-danger-light: #fef2f2;
+
+  /* Warning Amber - Strictly for precautions & pending states */
+  --hw-warning-50: #fffbeb;
+  --hw-warning-100: #fef3c7;
+  --hw-warning-500: #f59e0b;
+  --hw-warning: #d97706;
+  --hw-warning-light: #fffbeb;
+
+  /* Surface & Background Neutrals - Crisp, clean, institutional */
+  --hw-bg: #f8fafc;             /* Slate 50 */
+  --hw-bg-subtle: #f1f5f9;      /* Slate 100 */
+  --hw-surface: #ffffff;        /* Pure White Card */
+  --hw-surface-raised: #ffffff;
+  
+  /* Borders */
+  --hw-border-subtle: #f1f5f9;
+  --hw-border: #e2e8f0;         /* Slate 200 */
+  --hw-border-strong: #cbd5e1;  /* Slate 300 */
+
+  /* Typography Colors */
+  --hw-text-main: #0f172a;       /* Slate 900 */
+  --hw-text-body: #334155;       /* Slate 700 */
+  --hw-text-muted: #64748b;      /* Slate 500 */
+  --hw-text-subtle: #94a3b8;     /* Slate 400 */
+  --hw-text-inverse: #ffffff;
+
+  /* Typography Scale */
+  --hw-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --hw-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --hw-text-xs: 0.75rem;    /* 12px */
+  --hw-text-sm: 0.875rem;   /* 14px */
+  --hw-text-base: 1rem;     /* 16px */
+  --hw-text-lg: 1.125rem;   /* 18px */
+  --hw-text-xl: 1.25rem;    /* 20px */
+  --hw-text-2xl: 1.5rem;    /* 24px */
+  --hw-text-3xl: 1.875rem;  /* 30px */
+  --hw-text-4xl: 2.25rem;   /* 36px */
+
+  --hw-weight-regular: 400;
+  --hw-weight-medium: 500;
+  --hw-weight-semibold: 600;
+  --hw-weight-bold: 700;
+
+  /* Radius */
+  --hw-radius-xs: 4px;
+  --hw-radius-sm: 6px;
+  --hw-radius-md: 10px;     /* Default medium modern */
+  --hw-radius-lg: 14px;
+  --hw-radius-xl: 18px;
+  --hw-radius-full: 9999px;
+
+  /* Subtle Professional Shadows */
+  --hw-shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --hw-shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+  --hw-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --hw-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --hw-shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+
+  /* Layout Dimensions */
+  --hw-sidebar-width: 260px;
+  --hw-sidebar-collapsed: 72px;
+  --hw-header-height: 68px;
+  --hw-mobile-nav-height: 64px;
+  --hw-container-max: 1240px;
+
+  /* Transitions */
+  --hw-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --hw-transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --hw-transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}

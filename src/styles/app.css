@@ -1,0 +1,292 @@
+/* ==========================================================================
+   HEALTH WALLET GLOBAL APP STYLES & SPECIALIZED SCREEN STYLES
+   ========================================================================== */
+@import './tokens.css';
+@import './components.css';
+@import './layout.css';
+
+/* CSS Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--hw-font-family);
+  background-color: var(--hw-bg);
+  color: var(--hw-text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+}
+
+/* Grids */
+.hw-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+.hw-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.hw-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .hw-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .hw-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .hw-grid-2, .hw-grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- LANDING PAGE STYLING ---------- */
+.hw-landing-container {
+  min-height: 100vh;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+.hw-landing-nav {
+  height: 72px;
+  border-bottom: 1px solid var(--hw-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.hw-landing-hero {
+  padding: 64px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+  gap: 48px;
+}
+
+.hw-landing-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--hw-radius-full);
+  background-color: var(--hw-primary-light);
+  color: var(--hw-primary);
+  font-size: var(--hw-text-xs);
+  font-weight: var(--hw-weight-semibold);
+  margin-bottom: 20px;
+  border: 1px solid rgba(15, 76, 129, 0.15);
+}
+
+.hw-landing-title {
+  font-size: 2.75rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--hw-text-main);
+  letter-spacing: -0.03em;
+  margin-bottom: 20px;
+}
+.hw-landing-title span {
+  color: var(--hw-primary);
+}
+
+.hw-landing-lead {
+  font-size: var(--hw-text-lg);
+  color: var(--hw-text-muted);
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.hw-landing-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.hw-landing-hero-card {
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid var(--hw-border);
+  border-radius: var(--hw-radius-xl);
+  padding: 32px;
+  box-shadow: var(--hw-shadow-lg);
+  position: relative;
+}
+
+.hw-feature-card {
+  background: #ffffff;
+  border: 1px solid var(--hw-border);
+  border-radius: var(--hw-radius-lg);
+  padding: 24px;
+  transition: all var(--hw-transition-fast);
+}
+.hw-feature-card:hover {
+  border-color: var(--hw-primary);
+  transform: translateY(-3px);
+  box-shadow: var(--hw-shadow-md);
+}
+
+@media (max-width: 900px) {
+  .hw-landing-hero {
+    grid-template-columns: 1fr;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .hw-landing-actions {
+    justify-content: center;
+  }
+}
+
+/* ---------- LOGIN & SIGNUP PAGES ---------- */
+.hw-auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--hw-bg);
+  padding: 24px;
+}
+
+.hw-auth-card {
+  width: 100%;
+  max-width: 460px;
+  background: #ffffff;
+  border: 1px solid var(--hw-border);
+  border-radius: var(--hw-radius-xl);
+  padding: 36px 32px;
+  box-shadow: var(--hw-shadow-md);
+}
+
+.hw-auth-brand-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.hw-auth-logo-center {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--hw-radius-lg);
+  background: var(--hw-primary);
+  color: #ffffff;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 10px rgba(15, 76, 129, 0.25);
+}
+
+/* ---------- SCANNER CAMERA FRAME ---------- */
+.hw-scanner-viewport {
+  width: 100%;
+  height: 280px;
+  background-color: #0f172a;
+  border-radius: var(--hw-radius-lg);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+}
+
+.hw-scanner-guide {
+  position: absolute;
+  width: 80%;
+  height: 75%;
+  border: 2px dashed rgba(255, 255, 255, 0.6);
+  border-radius: var(--hw-radius-md);
+  pointer-events: none;
+}
+
+.hw-scanner-laser {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--hw-teal);
+  box-shadow: 0 0 12px var(--hw-teal);
+  animation: hwScanBeam 2.5s infinite ease-in-out alternate;
+}
+
+@keyframes hwScanBeam {
+  0% { top: 15%; opacity: 0.6; }
+  100% { top: 85%; opacity: 0.9; }
+}
+
+/* ---------- EMERGENCY RED ALERT MODE ---------- */
+.hw-emergency-active-banner {
+  background-color: #991b1b;
+  color: #ffffff;
+  padding: 16px 24px;
+  border-radius: var(--hw-radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(153, 27, 27, 0.35);
+  animation: hwEmergencyPulse 2s infinite ease-in-out;
+}
+
+@keyframes hwEmergencyPulse {
+  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+  70% { box-shadow: 0 0 0 12px rgba(220, 38, 38, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+
+/* Printable Offline Pass Card */
+.hw-offline-pass-card {
+  background: #ffffff;
+  border: 2px solid var(--hw-primary);
+  border-radius: var(--hw-radius-lg);
+  padding: 24px;
+  max-width: 440px;
+  margin: 0 auto;
+  box-shadow: var(--hw-shadow-md);
+  position: relative;
+}
+.hw-offline-pass-header {
+  border-bottom: 2px solid var(--hw-primary-light);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Custom Checkbox / Toggle */
+.hw-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: var(--hw-text-sm);
+  color: var(--hw-text-body);
+  user-select: none;
+}
+.hw-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--hw-primary);
+  cursor: pointer;
+}
