@@ -2,15 +2,12 @@ import React, { useState } from 'react';
 import { useHealthWallet } from '../../context/HealthWalletContext';
 import { Modal } from '../common/Modal';
 import {
-  UsersIcon,
   PlusIcon,
-  LockIcon,
-  PhoneIcon,
-  CheckCircleIcon
+  LockIcon
 } from '../common/Icons';
 
 export const FamilyHealthPage = () => {
-  const { familyMembers, addFamilyMember, addToast } = useHealthWallet();
+  const { addFamilyMember, addToast } = useHealthWallet();
 
   const [selectedMember, setSelectedMember] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);

@@ -3,13 +3,11 @@ import { useHealthWallet } from '../../context/HealthWalletContext';
 import { Modal } from '../common/Modal';
 import {
   DropletIcon,
-  HeartIcon,
-  CheckCircleIcon,
-  HeartHandshakeIcon
+  HeartIcon
 } from '../common/Icons';
 
 export const BloodDonationPage = () => {
-  const { user, nearbyBloodDonors, requestBloodDonor, addToast, navigate } = useHealthWallet();
+  const { user, requestBloodDonor, addToast, navigate } = useHealthWallet();
 
   const [activeTab, setActiveTab] = useState('blood'); // 'blood' | 'organ'
   const [showRequestModal, setShowRequestModal] = useState(false);

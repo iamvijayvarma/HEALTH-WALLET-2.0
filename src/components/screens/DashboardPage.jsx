@@ -17,7 +17,6 @@ import {
 export const DashboardPage = () => {
   const {
     user,
-    healthRecords,
     medicines,
     familyMembers,
     navigate

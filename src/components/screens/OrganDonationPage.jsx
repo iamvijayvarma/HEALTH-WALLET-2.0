@@ -3,10 +3,7 @@ import { useHealthWallet } from '../../context/HealthWalletContext';
 import { Modal } from '../common/Modal';
 import {
   HeartHandshakeIcon,
-  CheckCircleIcon,
-  DownloadIcon,
-  EditIcon,
-  PrinterIcon
+  EditIcon
 } from '../common/Icons';
 
 export const OrganDonationPage = () => {

@@ -4,8 +4,6 @@ import { Modal } from '../common/Modal';
 import {
   PillIcon,
   PlusIcon,
-  CheckCircleIcon,
-  ClockIcon,
   CheckIcon
 } from '../common/Icons';
 

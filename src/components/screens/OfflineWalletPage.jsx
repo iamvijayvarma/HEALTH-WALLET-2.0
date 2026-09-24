@@ -1,13 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useHealthWallet } from '../../context/HealthWalletContext';
-import {
-  DownloadIcon,
-  CheckCircleIcon,
-  PrinterIcon
-} from '../common/Icons';
+import { DownloadIcon } from '../common/Icons';
 
 export const OfflineWalletPage = () => {
-  const { user, isOfflineSimulated, toggleOfflineSimulation, addToast } = useHealthWallet();
+  const { isOfflineSimulated, toggleOfflineSimulation, addToast } = useHealthWallet();
 
   return (
     <div>

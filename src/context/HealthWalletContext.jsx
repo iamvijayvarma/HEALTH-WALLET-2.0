@@ -337,12 +337,13 @@ export const HealthWalletProvider = ({ children }) => {
   };
 
   // User actions
-  const loginUser = (credentials) => {
+  const loginUser = (credentials = {}) => {
     window.location.hash = '#dashboard';
     setState(prev => ({
       ...prev,
       isAuthenticated: true,
-      currentRoute: 'dashboard'
+      currentRoute: 'dashboard',
+      user: credentials?.phone ? { ...prev.user, phone: credentials.phone } : prev.user
     }));
     addToast('Welcome back to Health Wallet', 'success');
   };
@@ -529,6 +530,7 @@ export const HealthWalletProvider = ({ children }) => {
   );
 };
 
+// oxlint-disable-next-line react/only-export-components
 export const useHealthWallet = () => {
   const context = useContext(HealthWalletContext);
   if (!context) {

@@ -1,10 +1,5 @@
 import React, { useState } from 'react';
 import { useHealthWallet } from '../../context/HealthWalletContext';
-import {
-  UserIcon,
-  LockIcon,
-  GlobeIcon
-} from '../common/Icons';
 
 export const SettingsPage = () => {
   const { user, updateUserProfile, language, setLanguage, addToast } = useHealthWallet();
@@ -13,12 +8,12 @@ export const SettingsPage = () => {
 
   // Exact reference fields from Panel 9
   const [formData, setFormData] = useState({
-    fullName: 'Kavin',
-    dob: '1998-03-12',
-    gender: 'Male',
-    phone: '+91 98765 43210',
-    email: 'kavin@example.com',
-    address: 'Chennai, Tamil Nadu'
+    fullName: user?.fullName || 'Kavin',
+    dob: user?.dob || '1998-03-12',
+    gender: user?.gender || 'Male',
+    phone: user?.phone || '+91 98765 43210',
+    email: user?.email || 'kavin@example.com',
+    address: user?.address || 'Chennai, Tamil Nadu'
   });
 
   const handleSave = (e) => {

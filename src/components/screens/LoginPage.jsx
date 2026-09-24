@@ -7,10 +7,8 @@ import {
   ShieldCheckIcon,
   EyeIcon,
   LockIcon,
-  ArrowRightIcon,
   ArrowLeftIcon,
-  AlertCircleIcon,
-  CheckCircleIcon
+  AlertCircleIcon
 } from '../common/Icons';
 import '../../styles/login.css';
 

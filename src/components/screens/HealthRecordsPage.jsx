@@ -4,9 +4,7 @@ import { Modal } from '../common/Modal';
 import {
   FileTextIcon,
   PlusIcon,
-  DownloadIcon,
-  TrashIcon,
-  EyeIcon
+  DownloadIcon
 } from '../common/Icons';
 
 export const HealthRecordsPage = () => {

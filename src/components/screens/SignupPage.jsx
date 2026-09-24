@@ -7,9 +7,6 @@ import {
   ArrowRightIcon,
   ArrowLeftIcon,
   PhoneIcon,
-  UserIcon,
-  DropletIcon,
-  AlertTriangleIcon,
   ShieldCheckIcon
 } from '../common/Icons';
 

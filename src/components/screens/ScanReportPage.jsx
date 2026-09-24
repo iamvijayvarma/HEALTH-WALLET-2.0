@@ -103,14 +103,7 @@ export const ScanReportPage = () => {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, [stopCamera]);
 
-  // Stop camera when switching to upload tab
-  useEffect(() => {
-    if (activeTab !== 'camera') {
-      stopCamera();
-      setIsCameraOpen(false);
-      setCameraStatus('idle');
-    }
-  }, [activeTab, stopCamera]);
+
 
   // Request real camera stream and attach to the mounted <video> element
   const requestCameraStream = useCallback(async (preferFacing = facingMode, deviceId = selectedCameraId) => {
@@ -204,8 +197,17 @@ export const ScanReportPage = () => {
 
   // When isCameraOpen becomes true, the <video> element is guaranteed mounted in DOM
   useEffect(() => {
+    let isCancelled = false;
     if (isCameraOpen && !capturedImage) {
-      requestCameraStream();
+      const timer = setTimeout(() => {
+        if (!isCancelled) {
+          requestCameraStream();
+        }
+      }, 0);
+      return () => {
+        isCancelled = true;
+        clearTimeout(timer);
+      };
     }
   }, [isCameraOpen, capturedImage, requestCameraStream]);
 
@@ -381,6 +383,9 @@ export const ScanReportPage = () => {
           id="tab-upload-file"
           className={`hw-wide-toggle-btn ${activeTab === 'upload' ? 'active' : ''}`}
           onClick={() => {
+            stopCamera();
+            setIsCameraOpen(false);
+            setCameraStatus('idle');
             setActiveTab('upload');
             setIsReviewReady(false);
             setIsSaved(false);
@@ -467,7 +472,7 @@ export const ScanReportPage = () => {
                       {cameraStatus}
                     </strong>
                   </div>
-                  <div>Tracks: {videoTrackCount} | readyState: {videoReadyState}</div>
+                  <div>Tracks: {videoTrackCount} | readyState: {videoReadyState} | playing: {isVideoPlaying ? 'yes' : 'no'}</div>
                   <div>Dimensions: {videoDimensions.width} × {videoDimensions.height}</div>
                 </div>
 
