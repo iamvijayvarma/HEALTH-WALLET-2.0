@@ -16,11 +16,11 @@ export const SignupPage = () => {
   const [step, setStep] = useState(1); // 1: Personal, 2: OTP, 3: Health Profile, 4: Emergency Contact, 5: Consent
 
   const [formData, setFormData] = useState({
-    fullName: 'Kavin Rajan',
+    fullName: 'Vijay Rajan',
     dob: '1998-03-12',
     gender: 'Male',
     phone: '9876543210',
-    email: 'kavin.rajan@gov-health.org',
+    email: 'vijay.rajan@gov-health.org',
     bloodGroup: 'O+',
     allergies: 'Penicillin, Dust Mites',
     conditions: 'Mild Bronchial Asthma',
@@ -119,7 +119,7 @@ export const SignupPage = () => {
                 className="hw-input"
                 value={formData.fullName}
                 onChange={handleChange}
-                placeholder="e.g. Kavin Rajan"
+                placeholder="e.g. Vijay Rajan"
                 required
               />
             </div>

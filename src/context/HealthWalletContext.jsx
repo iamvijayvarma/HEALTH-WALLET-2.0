@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getHealthWalletId } from '../utils/userHelpers';
+import { matchCompatibleDonors } from '../utils/bloodCompatibility';
 
 const HealthWalletContext = createContext(null);
 
@@ -14,14 +16,15 @@ const INITIAL_STATE = {
   searchQuery: '',
 
   user: {
-    fullName: 'Kavin Rajan',
-    id: 'HW-9021-4819',
+    fullName: 'Vijay Rajan',
+    id: 'HW-20481',
+    healthWalletId: 'HW-20481',
     abhaNumber: '91-8402-1928-3841',
     dob: '1998-03-12',
     gender: 'Male',
     bloodGroup: 'O+',
     phone: '+91 98765 43210',
-    email: 'kavin.rajan@gov-health.org',
+    email: 'vijay.rajan@gov-health.org',
     address: '42, Pantheon Road, Egmore, Chennai, Tamil Nadu - 600008',
     allergies: ['Penicillin', 'Dust / Pollen Mites'],
     chronicConditions: ['Mild Allergic Bronchial Asthma'],
@@ -34,7 +37,7 @@ const INITIAL_STATE = {
   familyMembers: [
     {
       id: 'fam-self',
-      name: 'Kavin (You)',
+      name: 'Vijay (You)',
       relationship: 'Self',
       age: 28,
       bloodGroup: 'O+',
@@ -137,6 +140,8 @@ const INITIAL_STATE = {
     }
   ],
 
+  medicalReports: [],
+
   medicines: [
     {
       id: 'med-1',
@@ -212,6 +217,97 @@ const INITIAL_STATE = {
     }
   ],
 
+  bloodDonors: [
+    {
+      id: 'demo-don-1',
+      name: 'Arun Kumar',
+      bloodGroup: 'O+',
+      location: 'Karur',
+      availability: 'Available',
+      contactPreference: 'Health Wallet In-App',
+      isDemo: true,
+      registeredAt: '12 Aug 2026'
+    },
+    {
+      id: 'demo-don-2',
+      name: 'Priya S',
+      bloodGroup: 'A+',
+      location: 'Chennai',
+      availability: 'Available',
+      contactPreference: 'Phone Call / SMS',
+      isDemo: true,
+      registeredAt: '25 Jul 2026'
+    },
+    {
+      id: 'demo-don-3',
+      name: 'Vignesh R',
+      bloodGroup: 'B+',
+      location: 'Chennai',
+      availability: 'Available',
+      contactPreference: 'Health Wallet In-App',
+      isDemo: true,
+      registeredAt: '03 Sep 2026'
+    },
+    {
+      id: 'demo-don-4',
+      name: 'Deepa M',
+      bloodGroup: 'O-',
+      location: 'Coimbatore',
+      availability: 'Available',
+      contactPreference: 'Phone Call / SMS',
+      isDemo: true,
+      registeredAt: '19 Aug 2026'
+    },
+    {
+      id: 'demo-don-5',
+      name: 'Karthik Subburaj',
+      bloodGroup: 'O+',
+      location: 'Karur',
+      availability: 'Available',
+      contactPreference: 'Health Wallet In-App',
+      isDemo: true,
+      registeredAt: '29 Jun 2026'
+    },
+    {
+      id: 'demo-don-6',
+      name: 'Rajesh K',
+      bloodGroup: 'AB+',
+      location: 'Madurai',
+      availability: 'Available',
+      contactPreference: 'Health Wallet In-App',
+      isDemo: true,
+      registeredAt: '08 May 2026'
+    },
+    {
+      id: 'demo-don-7',
+      name: 'Meera N',
+      bloodGroup: 'A-',
+      location: 'Karur',
+      availability: 'Unavailable',
+      contactPreference: 'Phone Call / SMS',
+      isDemo: true,
+      registeredAt: '14 Jul 2026'
+    }
+  ],
+
+  donorProfile: null,
+
+  bloodRequests: [
+    {
+      id: 'req-demo-1',
+      patientName: 'M. Ramesh',
+      bloodGroupRequired: 'O+',
+      unitsRequired: 2,
+      location: 'Karur',
+      urgency: 'Emergency',
+      additionalNote: 'Emergency surgical requirement at Apollo Karur Hospital',
+      status: 'Donor Requested',
+      createdAt: '29 Sep 2026, 04:30 PM',
+      requestedDonors: ['Arun Kumar'],
+      isDemo: true
+    }
+  ],
+
   organPledge: {
     isRegistered: true,
     pledgeId: 'OD-IN-2026-90412',
@@ -223,6 +319,28 @@ const INITIAL_STATE = {
     nomineePhone: '+91 98401 23456',
     consentSigned: true
   },
+
+  emergencyMode: {
+    isActive: false,
+    activatedAt: null,
+    reason: 'Medical Emergency',
+    otherReasonText: '',
+    location: null,
+    alertPrepared: false,
+    alertPreparedAt: null
+  },
+
+  emergencyHistory: [
+    {
+      id: 'em-evt-1',
+      eventType: 'Emergency Mode Activated',
+      timestamp: '22 Sep 2026, 09:30 AM',
+      healthWalletId: 'HW-20481',
+      reason: 'Emergency assistance diagnostic test',
+      locationAvailability: 'Location Available',
+      accessType: 'Citizen Emergency Self-Activation'
+    }
+  ],
 
   emergencyState: {
     isActive: false,
@@ -275,10 +393,39 @@ export const HealthWalletProvider = ({ children }) => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved);
+        let serialized = saved;
+        if (serialized.includes('Kavin') || serialized.includes('kavin')) {
+          serialized = serialized.replace(/Kavin/g, 'Vijay').replace(/kavin/g, 'vijay');
+        }
+        if (serialized.includes('HW-9021-4819')) {
+          serialized = serialized.replace(/HW-9021-4819/g, 'HW-20481');
+        }
+        try { localStorage.setItem(STORAGE_KEY, serialized); } catch {}
+        const parsed = JSON.parse(serialized);
+        const resolvedUser = {
+          ...INITIAL_STATE.user,
+          ...parsed.user,
+          id: (parsed.user?.id === 'HW-9021-4819' || !parsed.user?.id) ? 'HW-20481' : parsed.user.id,
+          healthWalletId: parsed.user?.healthWalletId || (parsed.user?.id === 'HW-9021-4819' ? 'HW-20481' : (parsed.user?.id || 'HW-20481'))
+        };
+        const loadedReports = parsed.medicalReports || 
+          parsed.healthRecords?.filter(r => r.verificationStatus === 'User Verified' || r.verificationStatus === 'User verified' || r.extractedTests?.length > 0) || [];
+        const loadedEmergencyMode = parsed.emergencyMode || INITIAL_STATE.emergencyMode;
+        const loadedEmergencyHistory = parsed.emergencyHistory || parsed.emergencyEvents || INITIAL_STATE.emergencyHistory;
+        const loadedBloodDonors = parsed.bloodDonors || parsed.donors || INITIAL_STATE.bloodDonors;
+        const loadedDonorProfile = parsed.donorProfile !== undefined ? parsed.donorProfile : INITIAL_STATE.donorProfile;
+        const loadedBloodRequests = parsed.bloodRequests || INITIAL_STATE.bloodRequests;
+
         return {
           ...INITIAL_STATE,
           ...parsed,
+          medicalReports: loadedReports,
+          emergencyMode: loadedEmergencyMode,
+          emergencyHistory: loadedEmergencyHistory,
+          bloodDonors: loadedBloodDonors,
+          donorProfile: loadedDonorProfile,
+          bloodRequests: loadedBloodRequests,
+          user: resolvedUser,
           currentRoute: hashRoute || parsed.currentRoute || 'login'
         };
       }
@@ -361,10 +508,10 @@ export const HealthWalletProvider = ({ children }) => {
   // Record actions
   const addHealthRecord = (record) => {
     const newRecord = {
-      ...record,
       id: 'rec-' + Date.now(),
       date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-      verified: true
+      verified: true,
+      ...record
     };
     setState(prev => ({
       ...prev,
@@ -376,9 +523,36 @@ export const HealthWalletProvider = ({ children }) => {
   const deleteHealthRecord = (id) => {
     setState(prev => ({
       ...prev,
-      healthRecords: prev.healthRecords.filter(r => r.id !== id)
+      healthRecords: prev.healthRecords.filter(r => r.id !== id),
+      medicalReports: (prev.medicalReports || []).filter(r => r.id !== id)
     }));
     addToast('Record archived / removed', 'info');
+  };
+
+  // Dedicated Medical Reports actions matching required data model
+  const addMedicalReport = (report) => {
+    const reportItem = {
+      id: 'report-' + Date.now(),
+      verificationStatus: 'User Verified',
+      createdAt: new Date().toISOString(),
+      ...report
+    };
+    setState(prev => ({
+      ...prev,
+      medicalReports: [reportItem, ...(prev.medicalReports || [])],
+      healthRecords: [reportItem, ...prev.healthRecords]
+    }));
+    addToast('Medical report saved to Health Records', 'success');
+    return reportItem;
+  };
+
+  const deleteMedicalReport = (id) => {
+    setState(prev => ({
+      ...prev,
+      medicalReports: (prev.medicalReports || []).filter(r => r.id !== id),
+      healthRecords: prev.healthRecords.filter(r => r.id !== id)
+    }));
+    addToast('Medical report deleted successfully', 'info');
   };
 
   // Medicines actions
@@ -412,46 +586,146 @@ export const HealthWalletProvider = ({ children }) => {
   };
 
   // Emergency actions
-  const activateEmergency = () => {
-    const timestamp = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + ', ' + new Date().toLocaleDateString();
+  const activateEmergency = (reason = 'Medical Emergency', locationInfo = null) => {
+    const timestamp = new Date().toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const newEvent = {
+      id: 'em-evt-' + Date.now(),
+      eventType: 'Emergency Mode Activated',
+      timestamp,
+      healthWalletId: getHealthWalletId(state.user),
+      reason,
+      locationAvailability: locationInfo?.status === 'Location Available' ? 'Location Available' : 'Location Unavailable',
+      accessType: 'Citizen Emergency Self-Activation'
+    };
+
     setState(prev => ({
       ...prev,
+      emergencyMode: {
+        isActive: true,
+        activatedAt: timestamp,
+        reason,
+        location: locationInfo,
+        alertPrepared: false,
+        alertPreparedAt: null
+      },
       emergencyState: {
         ...prev.emergencyState,
         isActive: true,
         activatedAt: timestamp,
         auditLogs: [
-          {
-            timestamp,
-            event: 'HIGH PRIORITY: Emergency SOS Activated by User',
-            entity: '108 Dispatch Command & Authorized Family'
-          },
-          ...prev.emergencyState.auditLogs
+          { timestamp, event: `Emergency Mode Activated (${reason})`, entity: 'Citizen Authenticated Device' },
+          ...(prev.emergencyState?.auditLogs || [])
         ]
-      }
+      },
+      emergencyHistory: [newEvent, ...(prev.emergencyHistory || [])]
     }));
-    addToast('EMERGENCY ACTIVATED: Live medical alert dispatched', 'danger');
+    addToast('Emergency Mode Activated', 'danger');
+    return newEvent;
+  };
+
+  const prepareEmergencyAlert = (alertDetails = {}) => {
+    const timestamp = new Date().toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const newEvent = {
+      id: 'em-evt-' + Date.now(),
+      eventType: 'Emergency Alert Prepared',
+      timestamp,
+      healthWalletId: getHealthWalletId(state.user),
+      reason: alertDetails.reason || state.emergencyMode?.reason || 'Medical Emergency',
+      locationAvailability: alertDetails.locationAvailability || 'Location Available',
+      accessType: 'Emergency Profile Package Prepared'
+    };
+
+    setState(prev => ({
+      ...prev,
+      emergencyMode: {
+        ...prev.emergencyMode,
+        alertPrepared: true,
+        alertPreparedAt: timestamp
+      },
+      emergencyHistory: [newEvent, ...(prev.emergencyHistory || [])]
+    }));
+    addToast('Emergency Alert Prepared', 'info');
+    return newEvent;
   };
 
   const cancelEmergency = () => {
-    const timestamp = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const timestamp = new Date().toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const newEvent = {
+      id: 'em-evt-' + Date.now(),
+      eventType: 'Emergency Mode Deactivated',
+      timestamp,
+      healthWalletId: getHealthWalletId(state.user),
+      reason: 'Citizen deactivated emergency mode',
+      locationAvailability: 'Not Applicable',
+      accessType: 'User Stand-Down Command'
+    };
+
     setState(prev => ({
       ...prev,
+      emergencyMode: {
+        isActive: false,
+        activatedAt: null,
+        reason: 'Medical Emergency',
+        otherReasonText: '',
+        location: null,
+        alertPrepared: false,
+        alertPreparedAt: null
+      },
       emergencyState: {
         ...prev.emergencyState,
         isActive: false,
         auditLogs: [
-          {
-            timestamp,
-            event: 'Emergency status deactivated by verified user PIN',
-            entity: 'User Authenticated Device'
-          },
-          ...prev.emergencyState.auditLogs
+          { timestamp, event: 'Emergency Mode Deactivated by Citizen', entity: 'User Authenticated Device' },
+          ...(prev.emergencyState?.auditLogs || [])
         ]
-      }
+      },
+      emergencyHistory: [newEvent, ...(prev.emergencyHistory || [])]
     }));
-    addToast('Emergency deactivated. Stand down alert sent to contacts.', 'info');
+    addToast('Emergency Mode Deactivated', 'info');
   };
+
+  const addEmergencyEvent = (eventData) => {
+    const event = {
+      id: 'em-evt-' + Date.now(),
+      timestamp: new Date().toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+      healthWalletId: getHealthWalletId(state.user),
+      ...eventData
+    };
+    setState(prev => ({
+      ...prev,
+      emergencyHistory: [event, ...(prev.emergencyHistory || [])]
+    }));
+    return event;
+  };
+
+  const getEmergencyHistory = () => state.emergencyHistory || [];
 
   // Offline toggle
   const toggleOfflineSimulation = () => {
@@ -495,15 +769,132 @@ export const HealthWalletProvider = ({ children }) => {
     addToast('Profile information saved', 'success');
   };
 
-  // Request blood donor
+  // Blood Donation Module Methods
+  const registerBloodDonor = (donorData) => {
+    const profile = {
+      id: 'donor-self',
+      name: donorData.name || state.user?.fullName || 'Vijay Rajan',
+      bloodGroup: donorData.bloodGroup || state.user?.bloodGroup || 'O+',
+      location: donorData.location || 'Chennai',
+      availability: donorData.availability || 'Available',
+      contactPreference: donorData.contactPreference || 'Health Wallet In-App',
+      registeredAt: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      isSelf: true
+    };
+
+    setState(prev => {
+      const existingDonors = prev.bloodDonors || [];
+      const filtered = existingDonors.filter(d => d.id !== 'donor-self');
+      return {
+        ...prev,
+        donorProfile: profile,
+        bloodDonors: [profile, ...filtered]
+      };
+    });
+
+    addToast('Donor profile saved.', 'success');
+    return profile;
+  };
+
+  const updateDonorAvailability = (newAvailability) => {
+    setState(prev => {
+      if (!prev.donorProfile) return prev;
+      const updatedProfile = {
+        ...prev.donorProfile,
+        availability: newAvailability
+      };
+      const updatedDonors = (prev.bloodDonors || []).map(d =>
+        d.id === 'donor-self' ? { ...d, availability: newAvailability } : d
+      );
+      return {
+        ...prev,
+        donorProfile: updatedProfile,
+        bloodDonors: updatedDonors
+      };
+    });
+    addToast(`Donor status updated to ${newAvailability}.`, 'info');
+  };
+
+  const createBloodRequest = (requestData) => {
+    const newRequest = {
+      id: 'req-' + Date.now(),
+      patientName: requestData.patientName || 'Patient',
+      bloodGroupRequired: requestData.bloodGroupRequired,
+      unitsRequired: Number(requestData.unitsRequired) || 1,
+      location: requestData.location || '',
+      urgency: requestData.urgency || 'Normal',
+      additionalNote: requestData.additionalNote || '',
+      status: 'Open',
+      createdAt: new Date().toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+      requestedDonors: [],
+      isDemo: false
+    };
+
+    setState(prev => ({
+      ...prev,
+      bloodRequests: [newRequest, ...(prev.bloodRequests || [])]
+    }));
+
+    addToast('Blood request created.', 'success');
+    return newRequest;
+  };
+
+  const requestDonor = (requestId, donor) => {
+    setState(prev => {
+      const updatedRequests = (prev.bloodRequests || []).map(req => {
+        if (req.id === requestId) {
+          const donorName = donor?.name || 'Compatible Donor';
+          const existing = req.requestedDonors || [];
+          return {
+            ...req,
+            status: 'Donor Requested',
+            requestedDonors: existing.includes(donorName) ? existing : [...existing, donorName]
+          };
+        }
+        return req;
+      });
+
+      return {
+        ...prev,
+        bloodRequests: updatedRequests
+      };
+    });
+
+    addToast(`Donor request prepared for ${donor?.name || 'donor'}.`, 'success');
+  };
+
+  const cancelBloodRequest = (requestId) => {
+    setState(prev => ({
+      ...prev,
+      bloodRequests: (prev.bloodRequests || []).map(req =>
+        req.id === requestId ? { ...req, status: 'Cancelled' } : req
+      )
+    }));
+    addToast('Blood request cancelled.', 'info');
+  };
+
+  const findCompatibleDonors = (bloodGroup, location) => {
+    const allDonors = state.bloodDonors || [];
+    return matchCompatibleDonors(allDonors, bloodGroup, location);
+  };
+
+  // Request blood donor (legacy / direct)
   const requestBloodDonor = (donorName) => {
-    addToast(`Emergency blood request relayed to ${donorName}`, 'success');
+    addToast(`Donor request prepared for ${donorName}`, 'success');
   };
 
   return (
     <HealthWalletContext.Provider
       value={{
         ...state,
+        healthWalletId: getHealthWalletId(state.user),
+        getHealthWalletId,
         toasts,
         addToast,
         removeToast,
@@ -513,14 +904,32 @@ export const HealthWalletProvider = ({ children }) => {
         logoutUser,
         addHealthRecord,
         deleteHealthRecord,
+        medicalReports: state.medicalReports || [],
+        addMedicalReport,
+        deleteMedicalReport,
         toggleMedicineTaken,
         addFamilyMember,
+        emergencyMode: state.emergencyMode || { isActive: false },
+        emergencyHistory: state.emergencyHistory || [],
         activateEmergency,
         cancelEmergency,
+        prepareEmergencyAlert,
+        addEmergencyEvent,
+        getEmergencyHistory,
         toggleOfflineSimulation,
         updateOrganPledge,
         revokeOrganPledge,
         updateUserProfile,
+        bloodDonors: state.bloodDonors || [],
+        donors: state.bloodDonors || [],
+        donorProfile: state.donorProfile || null,
+        bloodRequests: state.bloodRequests || [],
+        registerBloodDonor,
+        updateDonorAvailability,
+        createBloodRequest,
+        requestDonor,
+        cancelBloodRequest,
+        findCompatibleDonors,
         requestBloodDonor,
         setSearchQuery: (query) => setState(prev => ({ ...prev, searchQuery: query }))
       }}

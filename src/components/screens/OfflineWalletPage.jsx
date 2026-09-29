@@ -1,9 +1,11 @@
 import React from 'react';
 import { useHealthWallet } from '../../context/HealthWalletContext';
+import { getHealthWalletId } from '../../utils/userHelpers';
 import { DownloadIcon } from '../common/Icons';
 
 export const OfflineWalletPage = () => {
-  const { isOfflineSimulated, toggleOfflineSimulation, addToast } = useHealthWallet();
+  const { user, healthWalletId: contextHealthWalletId, isOfflineSimulated, toggleOfflineSimulation, addToast } = useHealthWallet();
+  const healthWalletId = getHealthWalletId(user) || contextHealthWalletId;
 
   return (
     <div>
@@ -86,7 +88,7 @@ export const OfflineWalletPage = () => {
           Health Wallet ID
         </div>
         <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--hw-text-main)', letterSpacing: '0.04em', marginBottom: '24px' }}>
-          HW-20481
+          {healthWalletId}
         </div>
 
         {/* Big Blue Download Button (Panel 8 Reference) */}

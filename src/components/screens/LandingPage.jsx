@@ -121,10 +121,10 @@ export const LandingPage = () => {
         <div className="hw-landing-hero-card">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div className="hw-avatar">K</div>
+              <div className="hw-avatar">V</div>
               <div>
-                <strong style={{ fontSize: '14px', color: 'var(--hw-text-main)' }}>Kavin Rajan</strong>
-                <div style={{ fontSize: '11px', color: 'var(--hw-text-muted)' }}>HW-9021-4819 • Blood Group O+</div>
+                <strong style={{ fontSize: '14px', color: 'var(--hw-text-main)' }}>Vijay Rajan</strong>
+                <div style={{ fontSize: '11px', color: 'var(--hw-text-muted)' }}>HW-20481 • Blood Group O+</div>
               </div>
             </div>
             <span className="hw-badge hw-badge-teal">Verified Citizen</span>

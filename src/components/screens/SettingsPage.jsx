@@ -1,20 +1,62 @@
 import React, { useState } from 'react';
 import { useHealthWallet } from '../../context/HealthWalletContext';
+import { getHealthWalletId } from '../../utils/userHelpers';
+import { CopyIcon, CheckIcon } from '../common/Icons';
 
 export const SettingsPage = () => {
-  const { user, updateUserProfile, language, setLanguage, addToast } = useHealthWallet();
+  const { user, healthWalletId: contextHealthWalletId, updateUserProfile, language, setLanguage, addToast } = useHealthWallet();
+  const healthWalletId = getHealthWalletId(user) || contextHealthWalletId;
 
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'security' | 'preferences'
+  const [copied, setCopied] = useState(false);
 
   // Exact reference fields from Panel 9
   const [formData, setFormData] = useState({
-    fullName: user?.fullName || 'Kavin',
+    fullName: user?.fullName || 'Vijay',
     dob: user?.dob || '1998-03-12',
     gender: user?.gender || 'Male',
     phone: user?.phone || '+91 98765 43210',
-    email: user?.email || 'kavin@example.com',
+    email: user?.email || 'vijay@example.com',
     address: user?.address || 'Chennai, Tamil Nadu'
   });
+
+  const handleCopyId = async () => {
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(healthWalletId);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = healthWalletId;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopied(true);
+      addToast('Health Wallet ID copied to clipboard', 'success');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = healthWalletId;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        setCopied(true);
+        addToast('Health Wallet ID copied to clipboard', 'success');
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        addToast('Unable to copy ID automatically', 'warning');
+      }
+    }
+  };
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -108,6 +150,81 @@ export const SettingsPage = () => {
                     value={formData.fullName}
                     onChange={e => setFormData({ ...formData, fullName: e.target.value })}
                   />
+                </div>
+
+                {/* Dedicated Health Wallet ID Section/Card */}
+                <div
+                  style={{
+                    backgroundColor: 'var(--hw-primary-light, #eef5fc)',
+                    border: '1px solid var(--hw-primary-border, #bfdbfe)',
+                    borderRadius: 'var(--hw-radius-md, 8px)',
+                    padding: '12px 16px',
+                    marginBottom: '18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px'
+                  }}
+                >
+                  <div>
+                    <span
+                      style={{
+                        display: 'block',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                        color: 'var(--hw-primary, #1e56a0)',
+                        marginBottom: '4px'
+                      }}
+                    >
+                      Health Wallet ID
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '16px',
+                        fontWeight: 600,
+                        color: 'var(--hw-text-main, #0f172a)',
+                        letterSpacing: '0.04em',
+                        fontFamily: 'var(--hw-font-mono, monospace)'
+                      }}
+                    >
+                      {healthWalletId}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyId}
+                    aria-label="Copy Health Wallet ID"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      padding: '7px 14px',
+                      backgroundColor: '#ffffff',
+                      border: '1px solid var(--hw-primary-border, #bfdbfe)',
+                      borderRadius: 'var(--hw-radius-sm, 6px)',
+                      color: copied ? 'var(--hw-green, #10b981)' : 'var(--hw-primary, #1e56a0)',
+                      cursor: 'pointer',
+                      boxShadow: 'var(--hw-shadow-xs, 0 1px 2px rgba(0,0,0,0.05))',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {copied ? (
+                      <>
+                        <CheckIcon size={14} color="var(--hw-green, #10b981)" />
+                        <span>Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <CopyIcon size={14} color="var(--hw-primary, #1e56a0)" />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 {/* Date of Birth & Gender */}

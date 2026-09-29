@@ -1,25 +1,39 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useHealthWallet } from '../../context/HealthWalletContext';
+import { validateMedicalDocument } from '../../services/medicalDocumentValidator';
+import { performOcr } from '../../services/ocrService';
+import { extractMedicalReport } from '../../services/medicalReportExtractor';
+import { createMedicalReport } from '../../services/healthRecordService';
+import { ValidationStatus } from '../scanner/ValidationStatus';
+import { ExtractionStatus } from '../scanner/ExtractionStatus';
+import { ExtractionReview } from '../scanner/ExtractionReview';
 import {
   CameraIcon,
   UploadIcon,
-  EditIcon,
-  CheckCircleIcon,
-  XIcon,
   RefreshIcon,
   SwitchCameraIcon,
-  AlertTriangleIcon,
-  FileTextIcon
+  AlertTriangleIcon
 } from '../common/Icons';
 
 export const ScanReportPage = () => {
-  const { addHealthRecord, addToast } = useHealthWallet();
+  const { addMedicalReport, addToast, navigate } = useHealthWallet();
 
-  // Active Tab: 'camera' | 'upload'
+  // Active Input Tab: 'camera' | 'upload'
   const [activeTab, setActiveTab] = useState('camera');
 
-  // Camera Open & Status State
-  // Statuses: 'idle' | 'Requesting camera' | 'Permission granted' | 'Stream active' | 'Video ready' | 'Camera error'
+  /**
+   * Pipeline Stages:
+   * 'INPUT'       → Ready to capture or select file
+   * 'VALIDATING'  → Running medical document structure & terminology verification
+   * 'VALID'       → Medical report detected (brief confirmation before extraction)
+   * 'REJECTED'    → Document rejected (not a medical report)
+   * 'EXTRACTING'  → Running OCR and structured clinical parameter extraction
+   * 'REVIEW'      → Side-by-side / stacked review with editable parameters
+   * 'SAVED'       → User confirmed & saved to Health Records
+   */
+  const [pipelineStage, setPipelineStage] = useState('INPUT');
+
+  // Camera Open & Hardware State
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [cameraStatus, setCameraStatus] = useState('idle');
   const [isCameraReady, setIsCameraReady] = useState(false);
@@ -35,27 +49,20 @@ export const ScanReportPage = () => {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const fileInputRef = useRef(null);
+  const autoExtractTimerRef = useRef(null);
 
   // Multi-camera device tracking
   const [availableCameras, setAvailableCameras] = useState([]);
   const [selectedCameraId, setSelectedCameraId] = useState('');
   const [facingMode, setFacingMode] = useState('environment');
 
-  // Captured Image & Review
+  // Document Validation and Extraction State
   const [capturedImage, setCapturedImage] = useState(null);
   const [capturedFileName, setCapturedFileName] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isReviewReady, setIsReviewReady] = useState(false);
+  const [validationResult, setValidationResult] = useState(null);
+  const [extractedReport, setExtractedReport] = useState(null);
+  const [extractionErrorMessage, setExtractionErrorMessage] = useState('');
   const [isSaved, setIsSaved] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-
-  // Clinical Metrics Data for Review
-  const [extractedData, setExtractedData] = useState([
-    { id: 1, testName: 'Hemoglobin', value: '13.2', unit: 'g/dL' },
-    { id: 2, testName: 'Blood Glucose (Fasting)', value: '96', unit: 'mg/dL' },
-    { id: 3, testName: 'Total Cholesterol', value: '180', unit: 'mg/dL' },
-    { id: 4, testName: 'Vitamin D', value: '28', unit: 'ng/mL' }
-  ]);
 
   // =========================================================================
   // CAMERA STREAM LIFECYCLE
@@ -90,6 +97,9 @@ export const ScanReportPage = () => {
   useEffect(() => {
     return () => {
       stopCamera();
+      if (autoExtractTimerRef.current) {
+        clearTimeout(autoExtractTimerRef.current);
+      }
     };
   }, [stopCamera]);
 
@@ -102,8 +112,6 @@ export const ScanReportPage = () => {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, [stopCamera]);
-
-
 
   // Request real camera stream and attach to the mounted <video> element
   const requestCameraStream = useCallback(async (preferFacing = facingMode, deviceId = selectedCameraId) => {
@@ -151,13 +159,6 @@ export const ScanReportPage = () => {
         }
       }
 
-      // Logging diagnostics
-      console.log('Camera stream:', stream);
-      console.log('Video tracks:', stream.getVideoTracks());
-      console.log('Video element:', videoRef.current);
-      console.log('Video dimensions:', videoRef.current?.videoWidth, videoRef.current?.videoHeight);
-      console.log('Ready state:', videoRef.current?.readyState);
-
       // Enumerate cameras for multi-camera switcher
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
@@ -174,7 +175,6 @@ export const ScanReportPage = () => {
         // non-fatal
       }
     } catch (err) {
-      console.error('Camera access error:', err);
       setCameraStatus('Camera error');
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
         setCameraErrorMessage('Camera access is required to scan a medical report. Please allow camera access in your browser settings.');
@@ -186,16 +186,13 @@ export const ScanReportPage = () => {
     }
   }, [facingMode, selectedCameraId]);
 
-  // Flow Step 15: Open camera container first, so <video> is mounted, then request camera stream
+  // Open camera viewport
   const handleOpenScanCamera = () => {
-    setCapturedImage(null);
-    setIsReviewReady(false);
-    setIsSaved(false);
-    setCameraErrorMessage('');
+    resetPipeline();
     setIsCameraOpen(true);
   };
 
-  // When isCameraOpen becomes true, the <video> element is guaranteed mounted in DOM
+  // Mount camera when requested
   useEffect(() => {
     let isCancelled = false;
     if (isCameraOpen && !capturedImage) {
@@ -255,12 +252,101 @@ export const ScanReportPage = () => {
     setCameraStatus('idle');
   };
 
+  // Reset complete pipeline to start fresh
+  const resetPipeline = () => {
+    if (autoExtractTimerRef.current) {
+      clearTimeout(autoExtractTimerRef.current);
+    }
+    setPipelineStage('INPUT');
+    setCapturedImage(null);
+    setCapturedFileName('');
+    setValidationResult(null);
+    setExtractedReport(null);
+    setExtractionErrorMessage('');
+    setIsSaved(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   // =========================================================================
-  // CAPTURE & REPORT PROCESSING
+  // DOCUMENT VALIDATION & EXTRACTION PIPELINE
   // =========================================================================
 
-  // Capture current video frame using canvas
-  const handleCapture = () => {
+  /**
+   * Runs medical validation followed by automatic OCR & clinical extraction
+   * 
+   * Camera / Upload
+   *       ↓
+   * Medical Report Validation
+   *       ↓
+   * OCR + AI Extraction
+   *       ↓
+   * Extraction Review
+   */
+  const processDocumentPipeline = async (documentInput, fileName) => {
+    try {
+      setPipelineStage('VALIDATING');
+      setValidationResult(null);
+      setExtractionErrorMessage('');
+
+      // Step 2: Medical Report Validation layer
+      const validation = await validateMedicalDocument(documentInput, { filename: fileName });
+      setValidationResult(validation);
+
+      if (!validation.isMedicalReport) {
+        // Strict Rejection — Document is NOT a medical report
+        setPipelineStage('REJECTED');
+        addToast("This doesn't appear to be a valid medical report.", 'warning');
+        return;
+      }
+
+      // Valid Medical Report detected
+      setPipelineStage('VALID');
+      addToast('Medical report verified successfully', 'success');
+
+      // Continue automatically to OCR + AI extraction
+      autoExtractTimerRef.current = setTimeout(async () => {
+        try {
+          setPipelineStage('EXTRACTING');
+
+          // Step 3: OCR service layer
+          const ocrResult = await performOcr(documentInput, { filename: fileName });
+
+          // Step 4: Medical report structured extraction layer
+          const extracted = await extractMedicalReport(ocrResult);
+
+          if (!extracted || !extracted.tests || extracted.tests.length === 0) {
+            setPipelineStage('REJECTED');
+            setExtractionErrorMessage('Unable to extract reliable information from this report.');
+            addToast('Unable to extract reliable information from this report.', 'error');
+            return;
+          }
+
+          setExtractedReport(extracted);
+          setPipelineStage('REVIEW');
+        } catch (extractErr) {
+          console.error('Extraction error:', extractErr);
+          setPipelineStage('REJECTED');
+          setExtractionErrorMessage('Unable to extract reliable information from this report.');
+          addToast('Extraction failure. Please upload a clear medical report.', 'error');
+        }
+      }, 850);
+    } catch (valErr) {
+      console.error('Validation error:', valErr);
+      setPipelineStage('REJECTED');
+      setValidationResult({
+        isMedicalReport: false,
+        confidence: 0,
+        documentType: 'Unknown',
+        reason: 'Error analyzing document. Please capture a clear medical report.'
+      });
+      addToast('Validation error. Please try again.', 'error');
+    }
+  };
+
+  // Shutter capture handler from live camera
+  const handleCapture = async () => {
     const video = videoRef.current;
     if (!video || !isCameraReady) return;
 
@@ -276,79 +362,96 @@ export const ScanReportPage = () => {
       ctx.drawImage(video, 0, 0, width, height);
 
       const dataUrl = canvas.toDataURL('image/jpeg', 0.94);
+      const generatedName = `Medical_Scan_${new Date().toISOString().slice(0, 10)}.jpg`;
 
-      // Stop camera stream immediately when capture is completed
+      // Stop camera stream immediately
       stopCamera();
       setIsCameraOpen(false);
 
       setCapturedImage(dataUrl);
-      setCapturedFileName(`Medical_Scan_${new Date().toISOString().slice(0, 10)}.jpg`);
-      addToast('Medical report image captured', 'success');
+      setCapturedFileName(generatedName);
+
+      // Trigger Validation & Extraction Pipeline
+      await processDocumentPipeline(dataUrl, generatedName);
     } catch (err) {
-      console.error('Frame capture error:', err);
-      addToast('Could not capture frame. Please try again.', 'error');
+      console.error('Camera capture error:', err);
+      addToast('Failed to capture photo from camera.', 'error');
     }
   };
 
-  // Retake photo: discard captured frame and reopen live camera
-  const handleRetake = () => {
-    setCapturedImage(null);
-    setIsReviewReady(false);
-    setIsSaved(false);
-    setIsCameraOpen(true);
-  };
-
-  // "Use This Report": proceed to AI clinical extraction and review table
-  const handleUseReport = () => {
-    setIsProcessing(true);
-    stopCamera();
-    setIsCameraOpen(false);
-
-    setTimeout(() => {
-      setIsProcessing(false);
-      setIsReviewReady(true);
-      addToast('Report processed. Please verify extracted clinical metrics below.', 'info');
-    }, 1200);
-  };
-
-  // File upload handler
-  const handleFileUpload = (e) => {
+  // File upload handler supporting JPG, JPEG, PNG, WEBP, and PDF
+  const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Check file size (15 MB maximum)
+    const MAX_FILE_SIZE = 15 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      addToast('File too large (maximum allowed size is 15MB). Please upload a smaller file.', 'error');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    // Check supported types
+    const validMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+    const isSupported = validMimes.includes(file.type) || /\.(jpe?g|png|webp|pdf)$/i.test(file.name);
+
+    if (!isSupported) {
+      addToast('Unsupported file type. Please upload a medical report in JPG, PNG, WEBP, or PDF format.', 'warning');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
     setCapturedFileName(file.name);
 
+    // Read preview
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
-      reader.onload = (loadEvt) => {
-        setCapturedImage(loadEvt.target.result);
+      reader.onload = async (loadEvt) => {
+        const dataUrl = loadEvt.target.result;
+        setCapturedImage(dataUrl);
+        await processDocumentPipeline(file, file.name);
       };
       reader.readAsDataURL(file);
     } else {
       setCapturedImage('pdf_document');
+      await processDocumentPipeline(file, file.name);
     }
   };
 
-  // Inline value editor for review table
-  const handleTestValueChange = (id, newValue) => {
-    setExtractedData(prev =>
-      prev.map(item => item.id === id ? { ...item, value: newValue } : item)
-    );
+  // Retake or Discard
+  const handleRetake = () => {
+    resetPipeline();
+    if (activeTab === 'camera') {
+      setIsCameraOpen(true);
+    }
   };
 
-  // Save to Health Records
-  const handleSaveToRecords = () => {
-    const summary = extractedData.map(t => `${t.testName}: ${t.value} ${t.unit}`).join(', ');
-    addHealthRecord({
-      title: capturedFileName ? `Scanned: ${capturedFileName}` : 'Scanned Medical Diagnostic Report',
-      category: 'Lab Reports',
-      hospital: 'Diagnostic Laboratory Center',
-      doctor: 'Consultant Pathologist',
-      summary: `Verified Extracted Values: ${summary}`,
-      tags: ['Camera-Scanned', 'Verified']
-    });
-    setIsSaved(true);
-    addToast('Report saved to Health Records', 'success');
+  // Switch to upload tab from invalid rejection
+  const handleUploadAnother = () => {
+    resetPipeline();
+    stopCamera();
+    setIsCameraOpen(false);
+    setActiveTab('upload');
+  };
+
+  // Step 5: User Confirmation & Save to Health Records
+  const handleConfirmAndSave = (confirmedReport) => {
+    try {
+      const record = createMedicalReport(confirmedReport, capturedImage, {
+        sourceMethod: activeTab === 'camera' ? 'Camera Scan' : 'Document Upload'
+      });
+
+      addMedicalReport(record);
+      setIsSaved(true);
+      setPipelineStage('SAVED');
+
+      // Immediately navigate to Health Records as specified in WORKFLOW
+      navigate('records');
+    } catch (saveErr) {
+      console.error('Save to health records error:', saveErr);
+      addToast('Failed to save record to wallet. Please try again.', 'error');
+    }
   };
 
   return (
@@ -363,47 +466,49 @@ export const ScanReportPage = () => {
         </p>
       </div>
 
-      {/* 2. Wide Toggle Tabs */}
-      <div className="hw-wide-toggle-tabs" style={{ maxWidth: '640px' }}>
-        <button
-          type="button"
-          id="tab-scan-camera"
-          className={`hw-wide-toggle-btn ${activeTab === 'camera' ? 'active' : ''}`}
-          onClick={() => {
-            setActiveTab('camera');
-            setIsReviewReady(false);
-            setIsSaved(false);
-          }}
-        >
-          <CameraIcon size={16} />
-          <span>Scan with Camera</span>
-        </button>
-        <button
-          type="button"
-          id="tab-upload-file"
-          className={`hw-wide-toggle-btn ${activeTab === 'upload' ? 'active' : ''}`}
-          onClick={() => {
-            stopCamera();
-            setIsCameraOpen(false);
-            setCameraStatus('idle');
-            setActiveTab('upload');
-            setIsReviewReady(false);
-            setIsSaved(false);
-          }}
-        >
-          <UploadIcon size={16} />
-          <span>Upload File</span>
-        </button>
-      </div>
+      {/* 2. Wide Toggle Tabs (Visible when not actively reviewing or validating) */}
+      {(pipelineStage === 'INPUT' || pipelineStage === 'REJECTED') && (
+        <div className="hw-wide-toggle-tabs" style={{ maxWidth: '640px' }}>
+          <button
+            type="button"
+            id="tab-scan-camera"
+            className={`hw-wide-toggle-btn ${activeTab === 'camera' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('camera');
+              resetPipeline();
+            }}
+          >
+            <CameraIcon size={16} />
+            <span>Scan with Camera</span>
+          </button>
+          <button
+            type="button"
+            id="tab-upload-file"
+            className={`hw-wide-toggle-btn ${activeTab === 'upload' ? 'active' : ''}`}
+            onClick={() => {
+              stopCamera();
+              setIsCameraOpen(false);
+              setCameraStatus('idle');
+              setActiveTab('upload');
+              resetPipeline();
+            }}
+          >
+            <UploadIcon size={16} />
+            <span>Upload File</span>
+          </button>
+        </div>
+      )}
 
-      {/* 3. CAMERA TAB CONTENT */}
-      {activeTab === 'camera' && (
+      {/* ================================================================= */}
+      {/* STAGE 1: INPUT — CAMERA CAPTURE                                   */}
+      {/* ================================================================= */}
+      {activeTab === 'camera' && pipelineStage === 'INPUT' && (
         <div>
           {/* CAMERA VIEWPORT MODAL / CONTAINER (Mounted when isCameraOpen is true) */}
-          {isCameraOpen && !capturedImage && (
+          {isCameraOpen && (
             <div className="hw-camera-wrapper" style={{ marginBottom: '28px' }}>
               <div className="hw-camera-viewport">
-                {/* 2. REAL <video> element inside camera viewport with autoPlay, playsInline, muted */}
+                {/* REAL <video> element inside camera viewport */}
                 <video
                   ref={videoRef}
                   autoPlay
@@ -412,7 +517,6 @@ export const ScanReportPage = () => {
                   className="hw-camera-video"
                   onLoadedMetadata={(e) => {
                     const v = e.target;
-                    console.log('onLoadedMetadata:', v.videoWidth, v.videoHeight, v.readyState);
                     setVideoDimensions({ width: v.videoWidth, height: v.videoHeight });
                     setVideoReadyState(v.readyState);
                     if (v.readyState >= 2 && v.videoWidth > 0 && v.videoHeight > 0) {
@@ -422,7 +526,6 @@ export const ScanReportPage = () => {
                   }}
                   onCanPlay={(e) => {
                     const v = e.target;
-                    console.log('onCanPlay readyState:', v.readyState);
                     setVideoReadyState(v.readyState);
                     if (v.readyState >= 2 && v.videoWidth > 0 && v.videoHeight > 0) {
                       setCameraStatus('Video ready');
@@ -431,7 +534,6 @@ export const ScanReportPage = () => {
                   }}
                   onPlaying={(e) => {
                     const v = e.target;
-                    console.log('onPlaying:', v.videoWidth, v.videoHeight, v.readyState);
                     setIsVideoPlaying(true);
                     setVideoReadyState(v.readyState);
                     setVideoDimensions({ width: v.videoWidth, height: v.videoHeight });
@@ -440,14 +542,13 @@ export const ScanReportPage = () => {
                       setIsCameraReady(true);
                     }
                   }}
-                  onError={(e) => {
-                    console.error('Video element error:', e);
+                  onError={() => {
                     setCameraStatus('Camera error');
                     setIsCameraReady(false);
                   }}
                 />
 
-                {/* 7. VISIBLE DEVELOPMENT DIAGNOSTICS */}
+                {/* Visible Development Diagnostics */}
                 <div
                   style={{
                     position: 'absolute',
@@ -476,7 +577,7 @@ export const ScanReportPage = () => {
                   <div>Dimensions: {videoDimensions.width} × {videoDimensions.height}</div>
                 </div>
 
-                {/* 11. SCANNING OVERLAY POSITIONED ABOVE VIDEO */}
+                {/* Scanning Overlay Positioned Above Video */}
                 <div className="hw-camera-overlay">
                   {/* Top Bar */}
                   <div className="hw-camera-topbar">
@@ -504,24 +605,29 @@ export const ScanReportPage = () => {
                         title="Close Camera"
                         aria-label="Close Camera"
                       >
-                        <XIcon size={18} />
+                        ✕
                       </button>
                     </div>
                   </div>
 
-                  {/* Document Alignment Frame */}
+                  {/* Document Alignment Frame with Required Instructions */}
                   <div className="hw-camera-frame">
                     <div className="hw-camera-corner hw-camera-corner-tl" />
                     <div className="hw-camera-corner hw-camera-corner-tr" />
                     <div className="hw-camera-corner hw-camera-corner-bl" />
                     <div className="hw-camera-corner hw-camera-corner-br" />
                     <div className="hw-camera-scan-laser" />
-                    <div className="hw-camera-guide-hint">
-                      Align prescription or lab report inside frame
+                    <div className="hw-camera-guide-hint" style={{ textAlign: 'center', lineHeight: '1.4' }}>
+                      <div style={{ fontWeight: 600, color: '#f8fafc' }}>
+                        Place the medical report completely inside the frame.
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                        Only medical reports and laboratory reports are accepted.
+                      </div>
                     </div>
                   </div>
 
-                  {/* Bottom Bar with Capture Shutter (Disabled until camera is ready) */}
+                  {/* Bottom Bar with Capture Shutter */}
                   <div className="hw-camera-bottombar">
                     <button
                       type="button"
@@ -601,50 +707,8 @@ export const ScanReportPage = () => {
             </div>
           )}
 
-          {/* CAPTURED REPORT PHOTO PREVIEW */}
-          {capturedImage && !isReviewReady && (
-            <div className="hw-captured-preview-card">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <CheckCircleIcon size={18} color="var(--hw-green)" />
-                  <strong style={{ fontSize: '15px', color: 'var(--hw-text-main)' }}>
-                    Report Photo Captured
-                  </strong>
-                </div>
-                <span className="hw-badge hw-badge-teal">Ready for Review</span>
-              </div>
-
-              <div className="hw-captured-image-box">
-                <img src={capturedImage} alt="Captured Medical Report" />
-              </div>
-
-              {/* 5. After capture: [ Retake ] [ Use This Report ] */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', marginTop: '18px', flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  id="btn-retake-photo"
-                  className="hw-btn hw-btn-secondary hw-btn-md"
-                  onClick={handleRetake}
-                >
-                  <RefreshIcon size={16} />
-                  <span>Retake</span>
-                </button>
-                <button
-                  type="button"
-                  id="btn-use-report"
-                  className="hw-btn hw-btn-primary hw-btn-md"
-                  onClick={handleUseReport}
-                  style={{ padding: '10px 24px' }}
-                >
-                  <CheckCircleIcon size={16} />
-                  <span>Use This Report</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* IDLE TRIGGER CARD: Click to start camera scan */}
-          {!isCameraOpen && !capturedImage && !isReviewReady && (
+          {/* Idle Start Card: Click to start camera scan */}
+          {!isCameraOpen && (
             <div
               className="hw-card"
               style={{
@@ -679,10 +743,9 @@ export const ScanReportPage = () => {
               </h3>
 
               <p style={{ fontSize: '13px', color: 'var(--hw-text-muted)', margin: '0 auto 18px auto', maxWidth: '440px' }}>
-                Open your device camera to preview, frame, and capture medical prescriptions or laboratory test reports.
+                Place your medical prescription or laboratory diagnostic report inside the camera frame.
               </p>
 
-              {/* 1. "Scan with Camera" button */}
               <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
                 <button
                   type="button"
@@ -707,289 +770,117 @@ export const ScanReportPage = () => {
         </div>
       )}
 
-      {/* 4. FILE UPLOAD TAB CONTENT */}
-      {activeTab === 'upload' && (
+      {/* ================================================================= */}
+      {/* STAGE 1: INPUT — FILE UPLOAD (JPG, PNG, WEBP, PDF)                */}
+      {/* ================================================================= */}
+      {activeTab === 'upload' && pipelineStage === 'INPUT' && (
         <div>
-          {capturedImage && !isReviewReady && (
-            <div className="hw-captured-preview-card">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FileTextIcon size={18} color="var(--hw-primary)" />
-                  <strong style={{ fontSize: '15px', color: 'var(--hw-text-main)' }}>
-                    {capturedFileName || 'Uploaded Medical Document'}
-                  </strong>
-                </div>
-                <span className="hw-badge hw-badge-teal">File Ready</span>
-              </div>
+          <div
+            className="hw-card"
+            style={{
+              border: '1.5px dashed #cbd5e1',
+              borderRadius: '14px',
+              textAlign: 'center',
+              padding: '44px 20px',
+              backgroundColor: '#ffffff',
+              marginBottom: '28px',
+              cursor: 'pointer'
+            }}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              style={{ display: 'none' }}
+              onChange={handleFileUpload}
+            />
 
-              {capturedImage !== 'pdf_document' ? (
-                <div className="hw-captured-image-box">
-                  <img src={capturedImage} alt="Uploaded Document" />
-                </div>
-              ) : (
-                <div style={{ padding: '32px', textAlign: 'center', background: 'var(--hw-bg)', borderRadius: '8px', margin: '14px 0' }}>
-                  <FileTextIcon size={36} color="var(--hw-primary)" />
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--hw-text-main)', marginTop: '8px' }}>
-                    {capturedFileName}
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--hw-text-muted)' }}>
-                    PDF Document Loaded
-                  </div>
-                </div>
-              )}
-
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', marginTop: '18px' }}>
-                <button
-                  type="button"
-                  className="hw-btn hw-btn-secondary hw-btn-md"
-                  onClick={() => setCapturedImage(null)}
-                >
-                  <RefreshIcon size={16} />
-                  <span>Choose Another</span>
-                </button>
-                <button
-                  type="button"
-                  className="hw-btn hw-btn-primary hw-btn-md"
-                  onClick={handleUseReport}
-                  style={{ padding: '10px 24px' }}
-                >
-                  <CheckCircleIcon size={16} />
-                  <span>Use This Report</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {!capturedImage && !isReviewReady && (
             <div
-              className="hw-card"
               style={{
-                border: '1.5px dashed #cbd5e1',
-                borderRadius: '14px',
-                textAlign: 'center',
-                padding: '44px 20px',
-                backgroundColor: '#ffffff',
-                marginBottom: '28px',
-                cursor: 'pointer'
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                background: 'var(--hw-primary-light)',
+                color: 'var(--hw-primary)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '14px'
               }}
-              onClick={() => fileInputRef.current?.click()}
             >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,application/pdf"
-                style={{ display: 'none' }}
-                onChange={handleFileUpload}
-              />
-
-              <div
-                style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '50%',
-                  background: 'var(--hw-primary-light)',
-                  color: 'var(--hw-primary)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '14px'
-                }}
-              >
-                <UploadIcon size={28} />
-              </div>
-
-              <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--hw-text-main)', margin: '0 0 4px 0' }}>
-                Click to upload medical document
-              </h3>
-
-              <p style={{ fontSize: '13px', color: 'var(--hw-text-muted)', margin: '0 0 12px 0' }}>
-                Drag and drop your report files here or browse your device files
-              </p>
-
-              <button
-                type="button"
-                className="hw-btn hw-btn-secondary hw-btn-sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  fileInputRef.current?.click();
-                }}
-              >
-                Browse Files
-              </button>
-
-              <div style={{ marginTop: '16px', fontSize: '11px', color: 'var(--hw-text-subtle)' }}>
-                Supported formats: JPG, PNG, PDF (Max size: 15 MB)
-              </div>
+              <UploadIcon size={28} />
             </div>
-          )}
+
+            <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--hw-text-main)', margin: '0 0 4px 0' }}>
+              Click to upload medical document
+            </h3>
+
+            <p style={{ fontSize: '13px', color: 'var(--hw-text-muted)', margin: '0 0 12px 0' }}>
+              Upload your laboratory report or diagnostic scan (multi-page PDF supported)
+            </p>
+
+            <button
+              type="button"
+              className="hw-btn hw-btn-secondary hw-btn-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                fileInputRef.current?.click();
+              }}
+            >
+              Browse Files
+            </button>
+
+            <div style={{ marginTop: '16px', fontSize: '11px', color: 'var(--hw-text-subtle)' }}>
+              Supported formats: JPG, PNG, WEBP, PDF (Max size: 15 MB)
+            </div>
+          </div>
         </div>
       )}
 
-      {/* 5. AI PROCESSING SPINNER */}
-      {isProcessing && (
-        <div className="hw-card" style={{ textAlign: 'center', padding: '36px 20px', marginBottom: '28px' }}>
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '50%',
-              border: '3px solid var(--hw-primary-light)',
-              borderTopColor: 'var(--hw-primary)',
-              animation: 'hwSpin 1s infinite linear',
-              margin: '0 auto 16px auto'
-            }}
-          />
-          <h4 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--hw-text-main)', marginBottom: '4px' }}>
-            Extracting Clinical Information
-          </h4>
-          <p style={{ fontSize: '12px', color: 'var(--hw-text-muted)', margin: 0 }}>
-            Analyzing report layout and reading test values...
+      {/* ================================================================= */}
+      {/* STAGE 2: VALIDATING / VALID / REJECTED STATUS                     */}
+      {/* ================================================================= */}
+      {(pipelineStage === 'VALIDATING' || pipelineStage === 'VALID' || pipelineStage === 'REJECTED') && (
+        <ValidationStatus
+          isValidating={pipelineStage === 'VALIDATING'}
+          validationResult={validationResult}
+          documentPreview={capturedImage}
+          activeTab={activeTab}
+          onRetake={handleRetake}
+          onUploadAnother={handleUploadAnother}
+        />
+      )}
+
+      {/* Extraction failure error banner if extraction layer failed */}
+      {pipelineStage === 'REJECTED' && extractionErrorMessage && (
+        <div style={{ maxWidth: '640px', margin: '-16px auto 28px', textAlign: 'center' }}>
+          <p style={{ fontSize: '12px', color: 'var(--hw-danger)', fontWeight: 600 }}>
+            {extractionErrorMessage}
           </p>
         </div>
       )}
 
-      {/* 6. EXTRACTED CLINICAL METRICS TABLE (REVIEW & CONFIRM) */}
-      {isReviewReady && (
-        <div className="hw-card">
-          {/* Document Attachment Preview Bar */}
-          {capturedImage && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 16px',
-                background: 'var(--hw-bg)',
-                borderRadius: '8px',
-                border: '1px solid var(--hw-border)',
-                marginBottom: '20px'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                {capturedImage !== 'pdf_document' ? (
-                  <img
-                    src={capturedImage}
-                    alt="Thumbnail"
-                    style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--hw-border)' }}
-                  />
-                ) : (
-                  <FileTextIcon size={24} color="var(--hw-primary)" />
-                )}
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--hw-text-main)' }}>
-                    {capturedFileName || 'Scanned Report Photo'}
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--hw-text-muted)' }}>
-                    Attached to clinical record
-                  </div>
-                </div>
-              </div>
+      {/* ================================================================= */}
+      {/* STAGE 3: OCR + AI EXTRACTION PROGRESS                             */}
+      {/* ================================================================= */}
+      {pipelineStage === 'EXTRACTING' && (
+        <ExtractionStatus message="Extracting Clinical Information..." />
+      )}
 
-              <button
-                type="button"
-                className="hw-btn hw-btn-ghost hw-btn-sm"
-                onClick={() => {
-                  setIsReviewReady(false);
-                  if (activeTab === 'camera') {
-                    handleOpenScanCamera();
-                  } else {
-                    setCapturedImage(null);
-                  }
-                }}
-                style={{ color: 'var(--hw-primary)', fontSize: '12px' }}
-              >
-                Retake / Change
-              </button>
-            </div>
-          )}
-
-          <div className="hw-card-header" style={{ marginBottom: '16px' }}>
-            <div>
-              <h3 className="hw-card-title" style={{ fontSize: '16px', margin: '0 0 2px 0' }}>
-                Extracted Information (Review & Confirm)
-              </h3>
-              <span style={{ fontSize: '12px', color: 'var(--hw-text-muted)' }}>
-                Verify biochemical values before saving to your official records.
-              </span>
-            </div>
-
-            <button
-              type="button"
-              className="hw-btn hw-btn-ghost hw-btn-sm"
-              onClick={() => setIsEditing(!isEditing)}
-              style={{ color: 'var(--hw-primary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <EditIcon size={14} />
-              <span>{isEditing ? 'Done' : 'Edit'}</span>
-            </button>
-          </div>
-
-          {/* Clean Table: Test Name | Value | Unit */}
-          <div className="hw-table-container" style={{ border: 'none', marginBottom: '24px' }}>
-            <table className="hw-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '45%' }}>Test Name</th>
-                  <th style={{ width: '30%' }}>Value</th>
-                  <th style={{ width: '25%' }}>Unit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {extractedData.map((row) => (
-                  <tr key={row.id}>
-                    <td style={{ fontWeight: 600, color: 'var(--hw-text-main)' }}>
-                      {row.testName}
-                    </td>
-                    <td>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={row.value}
-                          onChange={(e) => handleTestValueChange(row.id, e.target.value)}
-                          style={{
-                            width: '80px',
-                            padding: '4px 8px',
-                            border: '1px solid var(--hw-primary)',
-                            borderRadius: '4px',
-                            fontSize: '13px',
-                            fontWeight: 700
-                          }}
-                        />
-                      ) : (
-                        <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--hw-text-main)' }}>
-                          {row.value}
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ color: 'var(--hw-text-muted)', fontSize: '13px' }}>
-                      {row.unit}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Bottom Save Action */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-            {isSaved ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--hw-green)', fontWeight: 600, fontSize: '13px' }}>
-                <CheckCircleIcon size={16} />
-                <span>Saved to Health Records</span>
-              </div>
-            ) : (
-              <button
-                type="button"
-                id="btn-save-records"
-                className="hw-btn hw-btn-primary hw-btn-lg"
-                onClick={handleSaveToRecords}
-                style={{ padding: '10px 24px' }}
-              >
-                Save to Health Records
-              </button>
-            )}
-          </div>
-        </div>
+      {/* ================================================================= */}
+      {/* STAGE 4 & 5: REVIEW EXTRACTED INFORMATION & USER CONFIRMATION     */}
+      {/* ================================================================= */}
+      {(pipelineStage === 'REVIEW' || pipelineStage === 'SAVED') && extractedReport && (
+        <ExtractionReview
+          originalDocument={capturedImage}
+          fileName={capturedFileName}
+          initialReport={extractedReport}
+          onConfirmAndSave={handleConfirmAndSave}
+          onRetake={handleRetake}
+          isSaved={isSaved}
+          onNavigateToRecords={() => navigate('records')}
+        />
       )}
     </div>
   );

@@ -16,8 +16,8 @@ export const FamilyHealthPage = () => {
   // Exact reference items from Panel 5
   const referenceMembers = [
     {
-      id: 'fam-kavin',
-      name: 'Kavin (You)',
+      id: 'fam-vijay',
+      name: 'Vijay (You)',
       relationship: 'Self',
       age: 28,
       bloodGroup: 'O+',
