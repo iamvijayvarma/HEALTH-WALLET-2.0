@@ -11,16 +11,22 @@ import {
   ArrowRightIcon,
   ClockIcon,
   DownloadIcon,
-  PlusIcon
+  PlusIcon,
+  HeartHandshakeIcon
 } from '../common/Icons';
 
 export const DashboardPage = () => {
   const {
     user,
-    medicines,
+    medicines = [],
+    medicationLogs = {},
     familyMembers,
+    organDonation,
+    getOrganDonationStatus,
     navigate
   } = useHealthWallet();
+
+  const organStatus = getOrganDonationStatus ? getOrganDonationStatus() : (organDonation?.status || 'Not Registered');
 
   const [selectedRecord, setSelectedRecord] = useState(null);
 
@@ -57,6 +63,24 @@ export const DashboardPage = () => {
       summary: 'Fasting Blood Glucose: 92 mg/dL. HbA1c: 5.4% (Optimal non-diabetic range).'
     }
   ];
+
+  const todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const activeMeds = medicines.filter(m => (m.status || 'Active') === 'Active');
+
+  const todayDoses = [];
+  activeMeds.forEach(m => {
+    const scheduledTime = m.frequency === 'Twice Daily' ? '08:00 AM' : (m.frequency === 'Once Daily' ? '08:00 AM' : '08:00 AM');
+    const logKey = `${todayStr}-${m.id}-${scheduledTime}`;
+    const status = medicationLogs[logKey] || (m.takenToday ? 'Taken' : 'Pending');
+    todayDoses.push({
+      id: m.id,
+      name: m.name,
+      dosage: m.dosage,
+      scheduledTime,
+      status
+    });
+  });
+  const displayMeds = todayDoses.slice(0, 3);
 
   return (
     <div>
@@ -254,6 +278,228 @@ export const DashboardPage = () => {
                 <span>Blood Donors</span>
               </button>
             </div>
+          </div>
+
+          {/* Today's Medicines Card (Requirement 11) */}
+          <div className="hw-card">
+            <div className="hw-card-header" style={{ marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: '#d1fae5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <PillIcon size={16} />
+                </div>
+                <h3 className="hw-card-title" style={{ fontSize: '15px', margin: 0 }}>
+                  Today's Medicines
+                </h3>
+              </div>
+              <button
+                type="button"
+                className="hw-btn hw-btn-ghost hw-btn-sm"
+                style={{ color: 'var(--hw-primary)', fontWeight: 600, padding: '4px 8px', fontSize: '12px' }}
+                onClick={() => navigate('medicines')}
+              >
+                View All Medicines
+              </button>
+            </div>
+
+            {displayMeds.length === 0 ? (
+              <div style={{ fontSize: '12px', color: 'var(--hw-text-muted)', textAlign: 'center', padding: '12px 0' }}>
+                No active medicines recorded today.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {displayMeds.map((med, idx) => (
+                  <div
+                    key={`${med.id}-${idx}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '15px' }} role="img" aria-label="Medicine">💊</span>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--hw-text-main)' }}>
+                          {med.name}
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--hw-text-muted)' }}>
+                          {med.dosage} · {med.scheduledTime}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      {med.status === 'Taken' && (
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                            background: '#ecfdf5',
+                            color: '#047857',
+                            border: '1px solid #a7f3d0'
+                          }}
+                        >
+                          ✓ Taken
+                        </span>
+                      )}
+                      {med.status === 'Skipped' && (
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                            background: '#fffbeb',
+                            color: '#d97706',
+                            border: '1px solid #fde68a'
+                          }}
+                        >
+                          — Skipped
+                        </span>
+                      )}
+                      {med.status === 'Pending' && (
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                            background: '#f1f5f9',
+                            color: '#64748b',
+                            border: '1px solid #cbd5e1'
+                          }}
+                        >
+                          ○ Pending
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Family Health Card (Requirement 13) */}
+          <div className="hw-card">
+            <div className="hw-card-header" style={{ marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: '#dbeafe', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <UsersIcon size={16} />
+                </div>
+                <h3 className="hw-card-title" style={{ fontSize: '15px', margin: 0 }}>
+                  Family Health
+                </h3>
+              </div>
+              <button
+                type="button"
+                className="hw-btn hw-btn-ghost hw-btn-sm"
+                style={{ color: 'var(--hw-primary)', fontWeight: 600, padding: '4px 8px', fontSize: '12px' }}
+                onClick={() => navigate('family')}
+              >
+                Manage Family
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', textAlign: 'center', padding: '10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '12px' }}>
+              <div>
+                <div style={{ fontSize: '11px', color: 'var(--hw-text-muted)' }}>Family Members</div>
+                <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--hw-text-main)', marginTop: '2px' }}>
+                  {familyMembers.length}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '11px', color: '#047857' }}>Linked</div>
+                <div style={{ fontSize: '17px', fontWeight: 700, color: '#047857', marginTop: '2px' }}>
+                  {familyMembers.filter(m => m.consentStatus === 'granted').length}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '11px', color: '#d97706' }}>Pending Consent</div>
+                <div style={{ fontSize: '17px', fontWeight: 700, color: '#d97706', marginTop: '2px' }}>
+                  {familyMembers.filter(m => m.consentStatus === 'pending').length}
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="hw-btn hw-btn-secondary hw-btn-sm"
+              style={{ width: '100%', justifyContent: 'center' }}
+              onClick={() => navigate('family')}
+            >
+              Manage Family
+            </button>
+          </div>
+
+          {/* Organ Donation Card (Requirement 13) */}
+          <div className="hw-card">
+            <div className="hw-card-header" style={{ marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: '#eff6ff', color: 'var(--hw-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <HeartHandshakeIcon size={16} />
+                </div>
+                <h3 className="hw-card-title" style={{ fontSize: '15px', margin: 0 }}>
+                  Organ Donation
+                </h3>
+              </div>
+              <button
+                type="button"
+                className="hw-btn hw-btn-ghost hw-btn-sm"
+                style={{ color: 'var(--hw-primary)', fontWeight: 600, padding: '4px 8px', fontSize: '12px' }}
+                onClick={() => navigate('organ-donation')}
+              >
+                {organStatus === 'Registered' ? 'Manage' : 'Register Intent'}
+              </button>
+            </div>
+
+            <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--hw-text-main)' }}>
+                  {organStatus === 'Registered'
+                    ? 'Donation intent registered'
+                    : organStatus === 'Withdrawn'
+                    ? 'Donation intent withdrawn'
+                    : 'Donation intent not registered'}
+                </span>
+                {organStatus === 'Registered' && (
+                  <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '6px', background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>
+                    ✓ Registered
+                  </span>
+                )}
+                {organStatus === 'Withdrawn' && (
+                  <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '6px', background: '#fffbeb', color: '#d97706', border: '1px solid #fde68a' }}>
+                    Withdrawn
+                  </span>
+                )}
+                {organStatus === 'Not Registered' && (
+                  <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '6px', background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1' }}>
+                    Not Registered
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: '12px', color: 'var(--hw-text-muted)', margin: 0 }}>
+                {organStatus === 'Registered'
+                  ? 'Voluntary intent recorded in Health Wallet.'
+                  : organStatus === 'Withdrawn'
+                  ? 'Voluntary intent currently marked as withdrawn.'
+                  : 'Record your voluntary organ donation preferences in your Health Wallet.'}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="hw-btn hw-btn-secondary hw-btn-sm"
+              style={{ width: '100%', justifyContent: 'center' }}
+              onClick={() => navigate('organ-donation')}
+            >
+              {organStatus === 'Registered' ? 'Manage' : 'Register Intent'}
+            </button>
           </div>
 
           {/* Health Timeline */}

@@ -179,9 +179,10 @@ export const EmergencyPage = () => {
     });
   };
 
-  // Format critical medicines
-  const criticalMedicinesList = medicines && medicines.length > 0
-    ? medicines.map(m => `${m.name} (${m.dosage || 'Daily'})`).join(', ')
+  // Format critical medicines - reads active critical medicines from shared state
+  const activeMedicines = (medicines || []).filter(m => (m.status || 'Active') === 'Active');
+  const criticalMedicinesList = activeMedicines.length > 0
+    ? activeMedicines.map(m => `${m.name} (${m.dosage || 'Daily'})`).join(', ')
     : 'None recorded';
 
   // Primary Emergency Contact
@@ -538,7 +539,7 @@ export const EmergencyPage = () => {
                 </div>
                 <div>
                   <span style={{ color: 'var(--hw-text-muted)', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>Critical Medicines</span>
-                  <strong style={{ color: 'var(--hw-text-main)' }}>{medicines.length > 0 ? 'Available' : 'None recorded'}</strong>
+                  <strong style={{ color: 'var(--hw-text-main)' }}>{activeMedicines.length > 0 ? 'Available' : 'None recorded'}</strong>
                 </div>
                 <div>
                   <span style={{ color: 'var(--hw-text-muted)', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>Emergency Contact</span>

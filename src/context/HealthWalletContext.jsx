@@ -36,44 +36,82 @@ const INITIAL_STATE = {
 
   familyMembers: [
     {
-      id: 'fam-self',
-      name: 'Vijay (You)',
-      relationship: 'Self',
-      age: 28,
-      bloodGroup: 'O+',
-      recordsCount: 6,
-      avatarColor: '#0f4c81',
-      conditions: ['Mild Asthma']
-    },
-    {
       id: 'fam-1',
-      name: 'Rajendran (Father)',
+      name: 'Rajendran R',
       relationship: 'Father',
-      age: 58,
-      bloodGroup: 'B+',
-      recordsCount: 8,
-      avatarColor: '#1e3a8a',
-      conditions: ['Hypertension', 'Type 2 Diabetes']
+      mobileNumber: '9840123456',
+      otpStatus: 'verified',
+      consentStatus: 'granted',
+      permissions: {
+        health_records: true,
+        medicines: true,
+        emergency: false
+      },
+      linkedAt: '15 Jan 2026',
+      consentUpdatedAt: '15 Jan 2026',
+      createdAt: '2026-01-15T09:00:00.000Z',
+      avatarColor: '#1e3a8a'
     },
     {
       id: 'fam-2',
-      name: 'Lakshmi (Mother)',
+      name: 'Lakshmi R',
       relationship: 'Mother',
-      age: 54,
-      bloodGroup: 'O+',
-      recordsCount: 10,
-      avatarColor: '#0d9488',
-      conditions: ['Osteoarthritis']
+      mobileNumber: '9840198765',
+      otpStatus: 'verified',
+      consentStatus: 'pending',
+      permissions: {
+        health_records: true,
+        medicines: false,
+        emergency: true
+      },
+      linkedAt: null,
+      consentUpdatedAt: '28 Sep 2026',
+      createdAt: '2026-09-28T14:30:00.000Z',
+      avatarColor: '#0d9488'
     },
     {
       id: 'fam-3',
-      name: 'Priya (Sister)',
+      name: 'Priya R',
       relationship: 'Sister',
-      age: 24,
-      bloodGroup: 'A+',
-      recordsCount: 4,
-      avatarColor: '#7c3aed',
-      conditions: ['None reported']
+      mobileNumber: '9840154321',
+      otpStatus: 'verified',
+      consentStatus: 'granted',
+      permissions: {
+        health_records: true,
+        medicines: true,
+        emergency: true
+      },
+      linkedAt: '10 Feb 2026',
+      consentUpdatedAt: '10 Feb 2026',
+      createdAt: '2026-02-10T11:15:00.000Z',
+      avatarColor: '#7c3aed'
+    }
+  ],
+
+  familyAuditLogs: [
+    {
+      id: 'faudit-1',
+      timestamp: '15 Jan 2026, 09:30 AM',
+      familyMemberId: 'fam-1',
+      familyMemberName: 'Rajendran R',
+      eventType: 'Consent Granted',
+      details: 'Permissions: Health Records, Medicines'
+    },
+    {
+      id: 'faudit-2',
+      timestamp: '10 Feb 2026, 11:25 AM',
+      familyMemberId: 'fam-3',
+      familyMemberName: 'Priya R',
+      eventType: 'Consent Granted',
+      details: 'Permissions: Health Records, Medicines, Emergency Information'
+    },
+    {
+      id: 'faudit-3',
+      timestamp: '28 Sep 2026, 02:40 PM',
+      familyMemberId: 'fam-2',
+      familyMemberName: 'Lakshmi R',
+      eventType: 'Consent Requested',
+      details: 'Permissions Requested: Health Records, Emergency Information'
     }
   ],
 
@@ -145,36 +183,80 @@ const INITIAL_STATE = {
   medicines: [
     {
       id: 'med-1',
-      name: 'Montelukast Sodium 10mg',
-      dosage: '1 Tablet Daily',
-      timing: 'Bedtime (Night)',
-      category: 'Allergy / Asthma',
-      prescribedBy: 'Dr. V. Rajesh',
-      startDate: '20 Apr 2026',
-      refillRemaining: 14,
+      name: 'Metformin',
+      dosage: '500 mg',
+      frequency: 'Twice Daily',
+      startDate: '28 Sep 2026',
+      endDate: '28 Oct 2026',
+      prescribedBy: 'Dr. Kumar',
+      notes: 'Take with morning and evening meals',
+      status: 'Active',
+      createdAt: '2026-09-28T08:00:00.000Z',
       takenToday: true
     },
     {
       id: 'med-2',
-      name: 'Asthalin (Salbutamol) 100mcg Inhaler',
-      dosage: '2 Puffs SOS',
-      timing: 'As Needed',
-      category: 'Bronchodilator',
+      name: 'Montelukast Sodium',
+      dosage: '10 mg',
+      frequency: 'Once Daily',
+      startDate: '20 Apr 2026',
+      endDate: '20 Oct 2026',
       prescribedBy: 'Dr. V. Rajesh',
-      startDate: '15 Jan 2026',
-      refillRemaining: 45,
-      takenToday: false
+      notes: 'Take daily at bedtime for allergic asthma maintenance',
+      status: 'Active',
+      createdAt: '2026-04-20T10:00:00.000Z',
+      takenToday: true
     },
     {
       id: 'med-3',
-      name: 'Vitamin D3 & Calcium 60,000 IU',
-      dosage: '1 Capsule Weekly',
-      timing: 'Sunday Morning (Post Breakfast)',
-      category: 'Supplement',
-      prescribedBy: 'Dr. P. Sivakumar',
-      startDate: '01 Mar 2026',
-      refillRemaining: 6,
-      takenToday: true
+      name: 'Asthalin (Salbutamol) Inhaler',
+      dosage: '100 mcg (2 Puffs)',
+      frequency: 'As Needed',
+      startDate: '15 Jan 2026',
+      endDate: '15 Dec 2026',
+      prescribedBy: 'Dr. V. Rajesh',
+      notes: 'Take 2 puffs SOS for acute bronchospasm',
+      status: 'Active',
+      createdAt: '2026-01-15T09:30:00.000Z',
+      takenToday: false
+    }
+  ],
+
+  medicationLogs: {
+    '2026-09-30-med-1-08:00 AM': 'Taken',
+    '2026-09-30-med-2-08:00 AM': 'Taken'
+  },
+
+  medicationHistory: [
+    {
+      id: 'hist-1',
+      medicineId: 'med-1',
+      medicineName: 'Metformin',
+      dosage: '500 mg',
+      date: '29 Sep 2026',
+      scheduledTime: '08:00 AM',
+      status: 'Taken',
+      timestamp: '2026-09-29T08:05:00.000Z'
+    },
+    {
+      id: 'hist-2',
+      medicineId: 'med-1',
+      medicineName: 'Metformin',
+      dosage: '500 mg',
+      date: '29 Sep 2026',
+      scheduledTime: '08:00 PM',
+      status: 'Skipped',
+      timestamp: '2026-09-29T20:10:00.000Z'
+    },
+    {
+      id: 'hist-3',
+      medicineId: 'med-2',
+      medicineName: 'Montelukast Sodium',
+      dosage: '10 mg',
+      date: '29 Sep 2026',
+      scheduledTime: '08:00 PM',
+      status: 'Taken',
+      timestamp: '2026-09-29T20:30:00.000Z'
     }
   ],
 
@@ -308,11 +390,32 @@ const INITIAL_STATE = {
     }
   ],
 
+  organDonation: {
+    id: 'OD-2026-90412',
+    status: 'Registered',
+    selectedOrgans: ['Heart', 'Liver', 'Kidneys', 'Eyes / Corneas', 'Lungs'],
+    consentConfirmed: true,
+    consentTextVersion: 'v1.0',
+    registeredAt: '15 Feb 2026, 10:30 AM',
+    updatedAt: null,
+    withdrawnAt: null
+  },
+
+  organDonationAuditLogs: [
+    {
+      id: 'od-audit-1',
+      eventType: 'Donation intent registered',
+      timestamp: '15 Feb 2026, 10:30 AM',
+      healthWalletId: 'HW-20481',
+      selectedOrgans: ['Heart', 'Liver', 'Kidneys', 'Eyes / Corneas', 'Lungs']
+    }
+  ],
+
   organPledge: {
     isRegistered: true,
-    pledgeId: 'OD-IN-2026-90412',
+    pledgeId: 'OD-2026-90412',
     registrationDate: '15 Feb 2026',
-    organsSelected: ['Corneas (Eyes)', 'Kidneys', 'Liver', 'Heart', 'Lungs'],
+    organsSelected: ['Eyes / Corneas', 'Kidneys', 'Liver', 'Heart', 'Lungs'],
     tissueSelected: ['Skin', 'Bone'],
     nomineeName: 'Rajendran R',
     nomineeRelation: 'Father',
@@ -415,6 +518,52 @@ export const HealthWalletProvider = ({ children }) => {
         const loadedBloodDonors = parsed.bloodDonors || parsed.donors || INITIAL_STATE.bloodDonors;
         const loadedDonorProfile = parsed.donorProfile !== undefined ? parsed.donorProfile : INITIAL_STATE.donorProfile;
         const loadedBloodRequests = parsed.bloodRequests || INITIAL_STATE.bloodRequests;
+        const loadedMedicines = (parsed.medicines && parsed.medicines.length > 0)
+          ? parsed.medicines.map(m => ({
+              status: 'Active',
+              frequency: m.frequency || 'Once Daily',
+              startDate: m.startDate || '28 Sep 2026',
+              endDate: m.endDate || '',
+              prescribedBy: m.prescribedBy || 'Physician',
+              notes: m.notes || '',
+              createdAt: m.createdAt || new Date().toISOString(),
+              ...m
+            }))
+          : INITIAL_STATE.medicines;
+        const loadedMedicationLogs = parsed.medicationLogs || INITIAL_STATE.medicationLogs || {};
+        const loadedMedicationHistory = parsed.medicationHistory || INITIAL_STATE.medicationHistory || [];
+
+        const loadedFamilyMembers = (parsed.familyMembers && parsed.familyMembers.length > 0)
+          ? parsed.familyMembers.map(m => ({
+              otpStatus: m.otpStatus || 'verified',
+              consentStatus: m.consentStatus || (m.permissions ? 'granted' : 'pending'),
+              permissions: m.permissions || { health_records: true, medicines: false, emergency: false },
+              mobileNumber: m.mobileNumber || '9840123456',
+              linkedAt: m.linkedAt || null,
+              consentUpdatedAt: m.consentUpdatedAt || null,
+              createdAt: m.createdAt || new Date().toISOString(),
+              ...m
+            }))
+          : INITIAL_STATE.familyMembers;
+        const loadedFamilyAuditLogs = parsed.familyAuditLogs || INITIAL_STATE.familyAuditLogs;
+
+        let loadedOrganDonation = parsed.organDonation;
+        if (!loadedOrganDonation && parsed.organPledge) {
+          loadedOrganDonation = {
+            id: parsed.organPledge.pledgeId || 'OD-2026-90412',
+            status: parsed.organPledge.isRegistered !== false ? 'Registered' : 'Not Registered',
+            selectedOrgans: parsed.organPledge.organsSelected?.map(o => o === 'Corneas (Eyes)' ? 'Eyes / Corneas' : o) || ['Heart', 'Liver', 'Kidneys', 'Eyes / Corneas', 'Lungs'],
+            consentConfirmed: true,
+            consentTextVersion: 'v1.0',
+            registeredAt: parsed.organPledge.registrationDate || '15 Feb 2026, 10:30 AM',
+            updatedAt: null,
+            withdrawnAt: null
+          };
+        }
+        if (!loadedOrganDonation) {
+          loadedOrganDonation = INITIAL_STATE.organDonation;
+        }
+        const loadedOrganAuditLogs = parsed.organDonationAuditLogs || INITIAL_STATE.organDonationAuditLogs;
 
         return {
           ...INITIAL_STATE,
@@ -425,6 +574,13 @@ export const HealthWalletProvider = ({ children }) => {
           bloodDonors: loadedBloodDonors,
           donorProfile: loadedDonorProfile,
           bloodRequests: loadedBloodRequests,
+          medicines: loadedMedicines,
+          medicationLogs: loadedMedicationLogs,
+          medicationHistory: loadedMedicationHistory,
+          familyMembers: loadedFamilyMembers,
+          familyAuditLogs: loadedFamilyAuditLogs,
+          organDonation: loadedOrganDonation,
+          organDonationAuditLogs: loadedOrganAuditLogs,
           user: resolvedUser,
           currentRoute: hashRoute || parsed.currentRoute || 'login'
         };
@@ -556,33 +712,360 @@ export const HealthWalletProvider = ({ children }) => {
   };
 
   // Medicines actions
-  const toggleMedicineTaken = (id) => {
+  const addMedicine = (medicineData) => {
+    const newMed = {
+      id: 'med-' + Date.now(),
+      name: medicineData.name?.trim(),
+      dosage: medicineData.dosage?.trim(),
+      frequency: medicineData.frequency || 'Once Daily',
+      startDate: medicineData.startDate,
+      endDate: medicineData.endDate || '',
+      prescribedBy: medicineData.prescribedBy?.trim() || '',
+      notes: medicineData.notes?.trim() || '',
+      status: medicineData.status || 'Active',
+      createdAt: new Date().toISOString(),
+      takenToday: false
+    };
+
     setState(prev => ({
       ...prev,
-      medicines: prev.medicines.map(m => {
-        if (m.id === id) {
-          const nextState = !m.takenToday;
-          return { ...m, takenToday: nextState };
+      medicines: [newMed, ...prev.medicines]
+    }));
+
+    addToast(`Added ${newMed.name} to medicines`, 'success');
+    return newMed;
+  };
+
+  const updateMedicine = (medicineId, updatedFields) => {
+    setState(prev => ({
+      ...prev,
+      medicines: prev.medicines.map(m =>
+        m.id === medicineId ? { ...m, ...updatedFields } : m
+      )
+    }));
+    addToast('Medicine updated successfully', 'success');
+  };
+
+  const deleteMedicine = (medicineId) => {
+    setState(prev => ({
+      ...prev,
+      medicines: prev.medicines.filter(m => m.id !== medicineId)
+    }));
+    addToast('Medicine removed from Health Wallet', 'info');
+  };
+
+  const setMedicineStatus = (medicineId, newStatus) => {
+    setState(prev => ({
+      ...prev,
+      medicines: prev.medicines.map(m =>
+        m.id === medicineId ? { ...m, status: newStatus } : m
+      )
+    }));
+    addToast(`Medicine marked as ${newStatus}`, 'info');
+  };
+
+  const logMedicationDose = (medicineId, date, scheduledTime, doseStatus) => {
+    const key = `${date}-${medicineId}-${scheduledTime}`;
+
+    setState(prev => {
+      const med = prev.medicines.find(m => m.id === medicineId);
+      const medicineName = med ? med.name : 'Medicine';
+      const dosage = med ? med.dosage : '';
+
+      const updatedLogs = {
+        ...prev.medicationLogs,
+        [key]: doseStatus
+      };
+
+      let updatedHistory = [...(prev.medicationHistory || [])];
+      const existingIdx = updatedHistory.findIndex(
+        h => h.medicineId === medicineId && h.date === date && h.scheduledTime === scheduledTime
+      );
+
+      if (doseStatus === 'Pending') {
+        if (existingIdx >= 0) {
+          updatedHistory.splice(existingIdx, 1);
+        }
+      } else {
+        const historyItem = {
+          id: existingIdx >= 0 ? updatedHistory[existingIdx].id : 'hist-' + Date.now(),
+          medicineId,
+          medicineName,
+          dosage,
+          date,
+          scheduledTime,
+          status: doseStatus,
+          timestamp: new Date().toISOString()
+        };
+        if (existingIdx >= 0) {
+          updatedHistory[existingIdx] = historyItem;
+        } else {
+          updatedHistory = [historyItem, ...updatedHistory];
+        }
+      }
+
+      const updatedMedicines = prev.medicines.map(m => {
+        if (m.id === medicineId) {
+          return { ...m, takenToday: doseStatus === 'Taken' };
         }
         return m;
-      })
-    }));
+      });
+
+      return {
+        ...prev,
+        medicines: updatedMedicines,
+        medicationLogs: updatedLogs,
+        medicationHistory: updatedHistory
+      };
+    });
+
+    if (doseStatus === 'Taken') {
+      addToast(`Marked as Taken (${scheduledTime})`, 'success');
+    } else if (doseStatus === 'Skipped') {
+      addToast(`Marked as Skipped (${scheduledTime})`, 'info');
+    } else {
+      addToast(`Reset schedule for ${scheduledTime}`, 'info');
+    }
+  };
+
+  const toggleMedicineTaken = (id) => {
+    const todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    setState(prev => {
+      const med = prev.medicines.find(m => m.id === id);
+      if (!med) return prev;
+      const nextTaken = !med.takenToday;
+      const key = `${todayStr}-${id}-08:00 AM`;
+      const nextStatus = nextTaken ? 'Taken' : 'Pending';
+
+      return {
+        ...prev,
+        medicines: prev.medicines.map(m =>
+          m.id === id ? { ...m, takenToday: nextTaken } : m
+        ),
+        medicationLogs: {
+          ...prev.medicationLogs,
+          [key]: nextStatus
+        }
+      };
+    });
     addToast('Medicine schedule updated', 'success');
   };
 
   // Family actions
-  const addFamilyMember = (member) => {
+  const addFamilyMember = (memberData) => {
+    const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     const newMember = {
-      ...member,
       id: 'fam-' + Date.now(),
-      recordsCount: 0,
-      avatarColor: '#0f4c81'
+      name: memberData.name?.trim(),
+      mobileNumber: memberData.mobileNumber?.trim(),
+      relationship: memberData.relationship || 'Other',
+      otpStatus: memberData.otpStatus || 'verified',
+      consentStatus: memberData.consentStatus || 'pending',
+      permissions: memberData.permissions || {
+        health_records: false,
+        medicines: false,
+        emergency: false
+      },
+      linkedAt: memberData.linkedAt || null,
+      consentUpdatedAt: today,
+      createdAt: new Date().toISOString(),
+      avatarColor: memberData.avatarColor || '#1e56a0'
     };
+
+    const auditEvent = {
+      id: 'faudit-' + Date.now(),
+      timestamp: new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      familyMemberId: newMember.id,
+      familyMemberName: newMember.name,
+      eventType: 'Family Member Added',
+      details: `Mobile: +91 ${newMember.mobileNumber}, Relationship: ${newMember.relationship}`
+    };
+
     setState(prev => ({
       ...prev,
-      familyMembers: [...prev.familyMembers, newMember]
+      familyMembers: [...prev.familyMembers, newMember],
+      familyAuditLogs: [auditEvent, ...(prev.familyAuditLogs || [])]
     }));
-    addToast(`Family member ${member.name} linked with verified consent`, 'success');
+
+    return newMember;
+  };
+
+  const createFamilyConsentRequest = (memberId, requestedPermissions) => {
+    const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const formattedTime = new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    setState(prev => {
+      const member = prev.familyMembers.find(m => m.id === memberId);
+      const permList = Object.entries(requestedPermissions || {})
+        .filter(([, val]) => val)
+        .map(([k]) => k.replace('_', ' '))
+        .join(', ') || 'None';
+
+      const auditEvent = {
+        id: 'faudit-' + Date.now(),
+        timestamp: formattedTime,
+        familyMemberId: memberId,
+        familyMemberName: member?.name || 'Family Member',
+        eventType: 'Consent Requested',
+        details: `Permissions Requested: ${permList}`
+      };
+
+      const updatedMembers = prev.familyMembers.map(m =>
+        m.id === memberId
+          ? {
+              ...m,
+              consentStatus: 'pending',
+              permissions: requestedPermissions,
+              consentUpdatedAt: today
+            }
+          : m
+      );
+
+      return {
+        ...prev,
+        familyMembers: updatedMembers,
+        familyAuditLogs: [auditEvent, ...(prev.familyAuditLogs || [])]
+      };
+    });
+
+    addToast('Consent request created.', 'info');
+  };
+
+  const grantFamilyConsent = (memberId) => {
+    const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const formattedTime = new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    setState(prev => {
+      const member = prev.familyMembers.find(m => m.id === memberId);
+      const permList = Object.entries(member?.permissions || {})
+        .filter(([, val]) => val)
+        .map(([k]) => k.replace('_', ' '))
+        .join(', ') || 'Standard';
+
+      const auditEvent = {
+        id: 'faudit-' + Date.now(),
+        timestamp: formattedTime,
+        familyMemberId: memberId,
+        familyMemberName: member?.name || 'Family Member',
+        eventType: 'Consent Granted',
+        details: `Permissions Granted: ${permList} (Development Mode Simulation)`
+      };
+
+      const updatedMembers = prev.familyMembers.map(m =>
+        m.id === memberId
+          ? {
+              ...m,
+              consentStatus: 'granted',
+              linkedAt: today,
+              consentUpdatedAt: today
+            }
+          : m
+      );
+
+      return {
+        ...prev,
+        familyMembers: updatedMembers,
+        familyAuditLogs: [auditEvent, ...(prev.familyAuditLogs || [])]
+      };
+    });
+
+    addToast('Consent granted for family member.', 'success');
+  };
+
+  const updateFamilyPermissions = (memberId, newPermissions) => {
+    const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const formattedTime = new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    setState(prev => {
+      const member = prev.familyMembers.find(m => m.id === memberId);
+      const permList = Object.entries(newPermissions || {})
+        .filter(([, val]) => val)
+        .map(([k]) => k.replace('_', ' '))
+        .join(', ') || 'None';
+
+      const auditEvent = {
+        id: 'faudit-' + Date.now(),
+        timestamp: formattedTime,
+        familyMemberId: memberId,
+        familyMemberName: member?.name || 'Family Member',
+        eventType: 'Permission Updated',
+        details: `Active Permissions: ${permList}`
+      };
+
+      const updatedMembers = prev.familyMembers.map(m =>
+        m.id === memberId
+          ? {
+              ...m,
+              permissions: newPermissions,
+              consentUpdatedAt: today
+            }
+          : m
+      );
+
+      return {
+        ...prev,
+        familyMembers: updatedMembers,
+        familyAuditLogs: [auditEvent, ...(prev.familyAuditLogs || [])]
+      };
+    });
+
+    addToast('Permissions updated successfully.', 'success');
+  };
+
+  const revokeFamilyConsent = (memberId) => {
+    const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const formattedTime = new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    setState(prev => {
+      const member = prev.familyMembers.find(m => m.id === memberId);
+
+      const auditEvent = {
+        id: 'faudit-' + Date.now(),
+        timestamp: formattedTime,
+        familyMemberId: memberId,
+        familyMemberName: member?.name || 'Family Member',
+        eventType: 'Consent Revoked',
+        details: 'Access immediately disabled for all categories.'
+      };
+
+      const updatedMembers = prev.familyMembers.map(m =>
+        m.id === memberId
+          ? {
+              ...m,
+              consentStatus: 'revoked',
+              permissions: {
+                health_records: false,
+                medicines: false,
+                emergency: false
+              },
+              consentUpdatedAt: today
+            }
+          : m
+      );
+
+      return {
+        ...prev,
+        familyMembers: updatedMembers,
+        familyAuditLogs: [auditEvent, ...(prev.familyAuditLogs || [])]
+      };
+    });
+
+    addToast('Family health access revoked.', 'info');
+  };
+
+  const removeFamilyMember = (memberId) => {
+    setState(prev => ({
+      ...prev,
+      familyMembers: prev.familyMembers.filter(m => m.id !== memberId)
+    }));
+    addToast('Family member removed.', 'info');
+  };
+
+  const hasFamilyPermission = (memberId, permissionKey) => {
+    const member = (state.familyMembers || []).find(m => m.id === memberId);
+    if (!member) return false;
+    if (member.consentStatus !== 'granted') return false;
+    return Boolean(member.permissions?.[permissionKey]);
   };
 
   // Emergency actions
@@ -735,29 +1218,143 @@ export const HealthWalletProvider = ({ children }) => {
     });
   };
 
-  // Organ Pledge
-  const updateOrganPledge = (pledgeData) => {
+  // Organ Donation Intent Methods (Voluntary Intent Management)
+  const registerOrganDonationIntent = (selectedOrgans) => {
+    if (!selectedOrgans || selectedOrgans.length === 0) {
+      addToast('Please select at least one organ or tissue.', 'error');
+      return null;
+    }
+    const nowTimestamp = new Date().toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    const isReRegister = state.organDonation?.status === 'Withdrawn';
+    const eventType = isReRegister ? 'Donation intent re-registered' : 'Donation intent registered';
+
+    const newRecord = {
+      id: state.organDonation?.id || ('OD-' + Date.now().toString().slice(-6)),
+      status: 'Registered',
+      selectedOrgans: [...selectedOrgans],
+      consentConfirmed: true,
+      consentTextVersion: 'v1.0',
+      registeredAt: nowTimestamp,
+      updatedAt: null,
+      withdrawnAt: null
+    };
+
+    const auditEvent = {
+      id: 'od-audit-' + Date.now(),
+      eventType,
+      timestamp: nowTimestamp,
+      healthWalletId: getHealthWalletId(state.user),
+      selectedOrgans: [...selectedOrgans]
+    };
+
     setState(prev => ({
       ...prev,
+      organDonation: newRecord,
+      organDonationAuditLogs: [auditEvent, ...(prev.organDonationAuditLogs || [])],
       organPledge: {
-        ...prev.organPledge,
-        ...pledgeData,
+        ...(prev.organPledge || {}),
         isRegistered: true,
-        pledgeId: prev.organPledge.pledgeId || ('OD-IN-2026-' + Math.floor(10000 + Math.random() * 90000))
+        organsSelected: [...selectedOrgans]
       }
     }));
-    addToast('National Organ Donation intention updated successfully', 'success');
+
+    addToast('Donation intent registered successfully.', 'success');
+    return newRecord;
   };
 
-  const revokeOrganPledge = () => {
+  const updateOrganDonationPreferences = (selectedOrgans) => {
+    if (!selectedOrgans || selectedOrgans.length === 0) {
+      addToast('Please select at least one organ or tissue.', 'error');
+      return false;
+    }
+    const nowTimestamp = new Date().toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const auditEvent = {
+      id: 'od-audit-' + Date.now(),
+      eventType: 'Preferences updated',
+      timestamp: nowTimestamp,
+      healthWalletId: getHealthWalletId(state.user),
+      selectedOrgans: [...selectedOrgans]
+    };
+
     setState(prev => ({
       ...prev,
+      organDonation: {
+        ...(prev.organDonation || {}),
+        status: 'Registered',
+        selectedOrgans: [...selectedOrgans],
+        updatedAt: nowTimestamp
+      },
+      organDonationAuditLogs: [auditEvent, ...(prev.organDonationAuditLogs || [])],
       organPledge: {
-        ...prev.organPledge,
+        ...(prev.organPledge || {}),
+        organsSelected: [...selectedOrgans]
+      }
+    }));
+
+    addToast('Organ donation preferences updated.', 'success');
+    return true;
+  };
+
+  const withdrawOrganDonationIntent = () => {
+    const nowTimestamp = new Date().toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const auditEvent = {
+      id: 'od-audit-' + Date.now(),
+      eventType: 'Donation intent withdrawn',
+      timestamp: nowTimestamp,
+      healthWalletId: getHealthWalletId(state.user),
+      selectedOrgans: state.organDonation?.selectedOrgans || []
+    };
+
+    setState(prev => ({
+      ...prev,
+      organDonation: {
+        ...(prev.organDonation || {}),
+        status: 'Withdrawn',
+        withdrawnAt: nowTimestamp
+      },
+      organDonationAuditLogs: [auditEvent, ...(prev.organDonationAuditLogs || [])],
+      organPledge: {
+        ...(prev.organPledge || {}),
         isRegistered: false
       }
     }));
-    addToast('Organ donation registration revoked', 'info');
+
+    addToast('Donation intent withdrawn.', 'info');
+  };
+
+  const getOrganDonationStatus = () => {
+    return state.organDonation?.status || 'Not Registered';
+  };
+
+  // Backward compatibility aliases
+  const updateOrganPledge = (pledgeData) => {
+    if (pledgeData?.organsSelected) {
+      updateOrganDonationPreferences(pledgeData.organsSelected);
+    }
+  };
+
+  const revokeOrganPledge = () => {
+    withdrawOrganDonationIntent();
   };
 
   // Update Profile
@@ -907,8 +1504,24 @@ export const HealthWalletProvider = ({ children }) => {
         medicalReports: state.medicalReports || [],
         addMedicalReport,
         deleteMedicalReport,
+        medicines: state.medicines || [],
+        medicationLogs: state.medicationLogs || {},
+        medicationHistory: state.medicationHistory || [],
+        addMedicine,
+        updateMedicine,
+        deleteMedicine,
+        setMedicineStatus,
+        logMedicationDose,
         toggleMedicineTaken,
+        familyMembers: state.familyMembers || [],
+        familyAuditLogs: state.familyAuditLogs || [],
         addFamilyMember,
+        createFamilyConsentRequest,
+        grantFamilyConsent,
+        updateFamilyPermissions,
+        revokeFamilyConsent,
+        removeFamilyMember,
+        hasFamilyPermission,
         emergencyMode: state.emergencyMode || { isActive: false },
         emergencyHistory: state.emergencyHistory || [],
         activateEmergency,
@@ -917,6 +1530,12 @@ export const HealthWalletProvider = ({ children }) => {
         addEmergencyEvent,
         getEmergencyHistory,
         toggleOfflineSimulation,
+        organDonation: state.organDonation || { status: 'Not Registered', selectedOrgans: [] },
+        organDonationAuditLogs: state.organDonationAuditLogs || [],
+        registerOrganDonationIntent,
+        updateOrganDonationPreferences,
+        withdrawOrganDonationIntent,
+        getOrganDonationStatus,
         updateOrganPledge,
         revokeOrganPledge,
         updateUserProfile,
