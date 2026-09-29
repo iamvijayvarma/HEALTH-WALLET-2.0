@@ -28,7 +28,7 @@ export const createMedicalReport = (extractedReport, originalDocument, options =
   const hospital = extractedReport?.hospital || extractedReport?.laboratory || 'Apollo Diagnostics';
   const laboratory = extractedReport?.laboratory || extractedReport?.hospital || 'Apollo Diagnostics';
   const reportType = extractedReport?.reportType || 'Complete Blood Count (CBC)';
-  const patientName = extractedReport?.patientName || 'Vijay Rajan';
+  const patientName = extractedReport?.patientName || 'Vijay';
   const patientId = extractedReport?.patientId || 'HW-20481';
   const doctor = extractedReport?.doctor || 'Consultant Pathologist';
 

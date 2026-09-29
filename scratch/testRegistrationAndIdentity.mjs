@@ -149,7 +149,7 @@ console.log('✓ New user registration model conforms completely to specificatio
 // 5. Existing Demo User Backward Compatibility
 console.log('\n[5] Testing Demo User Backward Compatibility:');
 const existingDemoUser = {
-  fullName: 'Vijay Rajan',
+  fullName: 'Vijay',
   id: 'HW-20481',
   healthWalletId: 'HW-20481',
   dob: '1998-03-12',

@@ -338,7 +338,7 @@ export const OrganDonationPage = () => {
               >
                 <div>
                   <div style={{ color: 'var(--hw-text-muted)', marginBottom: '2px' }}>Donor Name</div>
-                  <div style={{ fontWeight: 600, color: 'var(--hw-text-main)' }}>{user?.fullName || 'Vijay Rajan'}</div>
+                  <div style={{ fontWeight: 600, color: 'var(--hw-text-main)' }}>{user?.fullName || 'Vijay'}</div>
                 </div>
                 <div>
                   <div style={{ color: 'var(--hw-text-muted)', marginBottom: '2px' }}>Health Wallet ID</div>

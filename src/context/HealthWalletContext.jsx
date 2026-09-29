@@ -16,7 +16,7 @@ const INITIAL_STATE = {
   searchQuery: '',
 
   user: {
-    fullName: 'Vijay Rajan',
+    fullName: 'Vijay',
     id: 'HW-20481',
     healthWalletId: 'HW-20481',
     abhaNumber: '91-8402-1928-3841',
@@ -27,7 +27,7 @@ const INITIAL_STATE = {
     bloodGroup: 'O+',
     phone: '+91 98765 43210',
     mobileNumber: '9876543210',
-    email: 'vijay.rajan@gov-health.org',
+    email: 'vijay@gov-health.org',
     state: 'Tamil Nadu',
     district: 'Chennai',
     address: '42, Pantheon Road, Egmore, Chennai, Tamil Nadu - 600008',
@@ -511,6 +511,12 @@ export const HealthWalletProvider = ({ children }) => {
         let serialized = saved;
         if (serialized.includes('Kavin') || serialized.includes('kavin')) {
           serialized = serialized.replace(/Kavin/g, 'Vijay').replace(/kavin/g, 'vijay');
+        }
+        if (serialized.includes('Vijay Rajan')) {
+          serialized = serialized.replace(/Vijay Rajan/g, 'Vijay');
+        }
+        if (serialized.includes('vijay.rajan@gov-health.org')) {
+          serialized = serialized.replace(/vijay\.rajan@gov-health\.org/g, 'vijay@gov-health.org');
         }
         if (serialized.includes('HW-9021-4819')) {
           serialized = serialized.replace(/HW-9021-4819/g, 'HW-20481');
@@ -1488,7 +1494,7 @@ export const HealthWalletProvider = ({ children }) => {
   const registerBloodDonor = (donorData) => {
     const profile = {
       id: 'donor-self',
-      name: donorData.name || state.user?.fullName || 'Vijay Rajan',
+      name: donorData.name || state.user?.fullName || 'Vijay',
       bloodGroup: donorData.bloodGroup || state.user?.bloodGroup || 'O+',
       location: donorData.location || 'Chennai',
       availability: donorData.availability || 'Available',

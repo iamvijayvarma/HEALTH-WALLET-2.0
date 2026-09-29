@@ -19,11 +19,11 @@ export const SettingsPage = () => {
 
   // Form State reflecting the complete user data model
   const [formData, setFormData] = useState({
-    fullName: user?.fullName || 'Vijay Rajan',
+    fullName: user?.fullName || 'Vijay',
     dob: user?.dob || user?.dateOfBirth || '1998-03-12',
     gender: user?.gender || 'Male',
     mobileNumber: user?.mobileNumber || user?.phone?.replace(/\D/g, '').slice(-10) || '9876543210',
-    email: user?.email || 'vijay.rajan@gov-health.org',
+    email: user?.email || 'vijay@gov-health.org',
     state: user?.state || 'Tamil Nadu',
     district: user?.district || 'Chennai',
     address: user?.address || '42, Pantheon Road, Egmore, Chennai, Tamil Nadu - 600008',

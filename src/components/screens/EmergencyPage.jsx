@@ -319,7 +319,7 @@ export const EmergencyPage = () => {
                   {healthWalletId}
                 </strong>
                 <span style={{ fontSize: '11px', color: 'var(--hw-text-muted)' }}>
-                  Name: {user?.fullName || 'Vijay Rajan'}
+                  Name: {user?.fullName || 'Vijay'}
                 </span>
               </div>
             </div>

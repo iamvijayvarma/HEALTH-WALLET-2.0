@@ -21,7 +21,7 @@ export const extractMedicalReport = async (ocrResult, validationResult = {}, con
   const lines = ocrResult?.lines || [];
 
   // Default baseline metadata
-  let patientName = contextUser?.fullName || 'Vijay Rajan';
+  let patientName = contextUser?.fullName || 'Vijay';
   let patientId = contextUser?.healthWalletId || contextUser?.id || 'HW-20481';
   let reportType = validationResult?.documentType?.includes('Blood Count')
     ? 'Complete Blood Count (CBC)'

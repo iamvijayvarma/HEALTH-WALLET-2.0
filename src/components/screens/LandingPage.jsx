@@ -123,7 +123,7 @@ export const LandingPage = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div className="hw-avatar">V</div>
               <div>
-                <strong style={{ fontSize: '14px', color: 'var(--hw-text-main)' }}>Vijay Rajan</strong>
+                <strong style={{ fontSize: '14px', color: 'var(--hw-text-main)' }}>Vijay</strong>
                 <div style={{ fontSize: '11px', color: 'var(--hw-text-muted)' }}>HW-20481 • Blood Group O+</div>
               </div>
             </div>

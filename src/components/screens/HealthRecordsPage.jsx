@@ -458,7 +458,7 @@ export const HealthRecordsPage = () => {
             >
               <div>
                 <div style={{ fontSize: '11px', color: 'var(--hw-text-muted)', textTransform: 'uppercase' }}>Patient Name</div>
-                <strong style={{ fontSize: '13px', color: 'var(--hw-text-main)' }}>{selectedReport.patientName || 'Vijay Rajan'}</strong>
+                <strong style={{ fontSize: '13px', color: 'var(--hw-text-main)' }}>{selectedReport.patientName || 'Vijay'}</strong>
               </div>
               <div>
                 <div style={{ fontSize: '11px', color: 'var(--hw-text-muted)', textTransform: 'uppercase' }}>Report Type</div>

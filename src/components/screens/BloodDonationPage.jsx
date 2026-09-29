@@ -37,7 +37,7 @@ export const BloodDonationPage = () => {
   const [activeTab, setActiveTab] = useState('find');
 
   // Search / Request Blood form state
-  const [patientName, setPatientName] = useState('Vijay Rajan');
+  const [patientName, setPatientName] = useState(user?.fullName || 'Vijay');
   const [bloodGroupRequired, setBloodGroupRequired] = useState(user?.bloodGroup || 'O+');
   const [unitsRequired, setUnitsRequired] = useState(2);
   const [locationQuery, setLocationQuery] = useState('Karur');
@@ -50,7 +50,7 @@ export const BloodDonationPage = () => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   // Donor Registration form state
-  const [regName, setRegName] = useState(donorProfile?.name || user?.fullName || 'Vijay Rajan');
+  const [regName, setRegName] = useState(donorProfile?.name || user?.fullName || 'Vijay');
   const [regBloodGroup, setRegBloodGroup] = useState(donorProfile?.bloodGroup || user?.bloodGroup || 'O+');
   const [regLocation, setRegLocation] = useState(donorProfile?.location || 'Chennai');
   const [regAvailability, setRegAvailability] = useState(donorProfile?.availability || 'Available');

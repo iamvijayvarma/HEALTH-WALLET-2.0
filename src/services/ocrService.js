@@ -84,7 +84,7 @@ const executeDeterministicOcr = async (source, options = {}) => {
     const sampleLines = [
       'APOLLO CLINICAL DIAGNOSTICS & HOSPITAL NETWORK',
       'DEPARTMENT OF HEMATOLOGY & CLINICAL PATHOLOGY',
-      'Patient Name: Vijay Rajan    Age: 28 Yrs / Male    PID: HW-20481',
+      'Patient Name: Vijay    Age: 28 Yrs / Male    PID: HW-20481',
       'Ref By: Dr. A. Sundaram, MD (Path)    Sample: Whole Blood EDTA',
       'Collection Date: 28-Sep-2026 08:30 AM    Report Date: 28-Sep-2026',
       'INVESTIGATION / TEST NAME       VALUE     UNIT     REFERENCE INTERVAL',

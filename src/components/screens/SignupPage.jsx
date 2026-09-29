@@ -472,7 +472,7 @@ export const SignupPage = () => {
                 value={formData.fullName}
                 onChange={handleChange}
                 onBlur={() => handleBlur('fullName')}
-                placeholder="e.g. Vijay Rajan"
+                placeholder="e.g. Vijay"
                 style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: errors.fullName ? '1px solid var(--hw-danger)' : '1px solid #cbd5e1' }}
               />
               {errors.fullName && (
