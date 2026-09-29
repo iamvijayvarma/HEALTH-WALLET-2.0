@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getHealthWalletId } from '../utils/userHelpers';
+import { getHealthWalletId, generateHealthWalletId, maskAadhaar } from '../utils/userHelpers';
 import { matchCompatibleDonors } from '../utils/bloodCompatibility';
 
 const HealthWalletContext = createContext(null);
@@ -21,17 +21,29 @@ const INITIAL_STATE = {
     healthWalletId: 'HW-20481',
     abhaNumber: '91-8402-1928-3841',
     dob: '1998-03-12',
+    dateOfBirth: '1998-03-12',
     gender: 'Male',
+    aadhaarNumber: '987654321098',
     bloodGroup: 'O+',
     phone: '+91 98765 43210',
+    mobileNumber: '9876543210',
     email: 'vijay.rajan@gov-health.org',
+    state: 'Tamil Nadu',
+    district: 'Chennai',
     address: '42, Pantheon Road, Egmore, Chennai, Tamil Nadu - 600008',
     allergies: ['Penicillin', 'Dust / Pollen Mites'],
+    criticalConditions: ['Mild Allergic Bronchial Asthma'],
     chronicConditions: ['Mild Allergic Bronchial Asthma'],
+    emergencyContact: {
+      name: 'Rajendran R',
+      mobile: '9840123456',
+      relationship: 'Father'
+    },
     emergencyContacts: [
       { id: 'ec-1', name: 'Rajendran R', relationship: 'Father', phone: '+91 98401 23456', priority: 'Primary' },
       { id: 'ec-2', name: 'Dr. Meenakshi S', relationship: 'Family Physician', phone: '+91 94440 98765', priority: 'Medical Consultant' }
-    ]
+    ],
+    createdAt: '2026-01-15T08:00:00.000Z'
   },
 
   familyMembers: [
@@ -508,8 +520,23 @@ export const HealthWalletProvider = ({ children }) => {
         const resolvedUser = {
           ...INITIAL_STATE.user,
           ...parsed.user,
-          id: (parsed.user?.id === 'HW-9021-4819' || !parsed.user?.id) ? 'HW-20481' : parsed.user.id,
-          healthWalletId: parsed.user?.healthWalletId || (parsed.user?.id === 'HW-9021-4819' ? 'HW-20481' : (parsed.user?.id || 'HW-20481'))
+          id: parsed.user?.healthWalletId || (parsed.user?.id === 'HW-9021-4819' ? 'HW-20481' : (parsed.user?.id || 'HW-20481')),
+          healthWalletId: parsed.user?.healthWalletId || (parsed.user?.id === 'HW-9021-4819' ? 'HW-20481' : (parsed.user?.id || 'HW-20481')),
+          dateOfBirth: parsed.user?.dateOfBirth || parsed.user?.dob || INITIAL_STATE.user.dateOfBirth,
+          dob: parsed.user?.dob || parsed.user?.dateOfBirth || INITIAL_STATE.user.dob,
+          aadhaarNumber: parsed.user?.aadhaarNumber || INITIAL_STATE.user.aadhaarNumber,
+          mobileNumber: parsed.user?.mobileNumber || parsed.user?.phone?.replace(/\D/g, '').slice(-10) || INITIAL_STATE.user.mobileNumber,
+          phone: parsed.user?.phone || `+91 ${parsed.user?.mobileNumber || INITIAL_STATE.user.mobileNumber}`,
+          state: parsed.user?.state || INITIAL_STATE.user.state,
+          district: parsed.user?.district || INITIAL_STATE.user.district,
+          address: parsed.user?.address || INITIAL_STATE.user.address,
+          criticalConditions: parsed.user?.criticalConditions || parsed.user?.chronicConditions || INITIAL_STATE.user.criticalConditions,
+          chronicConditions: parsed.user?.chronicConditions || parsed.user?.criticalConditions || INITIAL_STATE.user.chronicConditions,
+          emergencyContact: parsed.user?.emergencyContact || {
+            name: parsed.user?.emergencyContacts?.[0]?.name || INITIAL_STATE.user.emergencyContact.name,
+            mobile: parsed.user?.emergencyContacts?.[0]?.phone?.replace(/\D/g, '').slice(-10) || INITIAL_STATE.user.emergencyContact.mobile,
+            relationship: parsed.user?.emergencyContacts?.[0]?.relationship || INITIAL_STATE.user.emergencyContact.relationship
+          }
         };
         const loadedReports = parsed.medicalReports || 
           parsed.healthRecords?.filter(r => r.verificationStatus === 'User Verified' || r.verificationStatus === 'User verified' || r.extractedTests?.length > 0) || [];
@@ -1359,11 +1386,102 @@ export const HealthWalletProvider = ({ children }) => {
 
   // Update Profile
   const updateUserProfile = (updatedFields) => {
+    setState(prev => {
+      const mergedUser = { ...prev.user, ...updatedFields };
+      if (updatedFields.dateOfBirth && !updatedFields.dob) mergedUser.dob = updatedFields.dateOfBirth;
+      if (updatedFields.dob && !updatedFields.dateOfBirth) mergedUser.dateOfBirth = updatedFields.dob;
+      if (updatedFields.mobileNumber && !updatedFields.phone) mergedUser.phone = `+91 ${updatedFields.mobileNumber}`;
+      if (updatedFields.phone && !updatedFields.mobileNumber) mergedUser.mobileNumber = String(updatedFields.phone).replace(/\D/g, '').slice(-10);
+      if (updatedFields.criticalConditions && !updatedFields.chronicConditions) mergedUser.chronicConditions = updatedFields.criticalConditions;
+      if (updatedFields.chronicConditions && !updatedFields.criticalConditions) mergedUser.criticalConditions = updatedFields.chronicConditions;
+      if (updatedFields.emergencyContact) {
+        mergedUser.emergencyContacts = [
+          {
+            id: 'ec-1',
+            name: updatedFields.emergencyContact.name,
+            relationship: updatedFields.emergencyContact.relationship,
+            phone: `+91 ${updatedFields.emergencyContact.mobile}`,
+            priority: 'Primary'
+          },
+          ...(prev.user.emergencyContacts?.slice(1) || [])
+        ];
+      }
+      return {
+        ...prev,
+        user: mergedUser
+      };
+    });
+    addToast('Profile information saved', 'success');
+  };
+
+  // Register New User (First-time onboarding & Identity Foundation)
+  const registerNewUser = (registrationData) => {
+    const newHealthWalletId = generateHealthWalletId();
+    const cleanMobile = registrationData.mobileNumber ? String(registrationData.mobileNumber).replace(/\D/g, '').slice(-10) : '';
+    const cleanAadhaar = registrationData.aadhaarNumber ? String(registrationData.aadhaarNumber).replace(/\D/g, '').slice(-12) : '';
+    const cleanEmMobile = registrationData.emergencyContactMobile ? String(registrationData.emergencyContactMobile).replace(/\D/g, '').slice(-10) : '';
+
+    const allergiesArray = Array.isArray(registrationData.allergies)
+      ? registrationData.allergies
+      : registrationData.allergies
+      ? String(registrationData.allergies).split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+
+    const conditionsArray = Array.isArray(registrationData.criticalConditions)
+      ? registrationData.criticalConditions
+      : registrationData.criticalConditions
+      ? String(registrationData.criticalConditions).split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+
+    const newUser = {
+      id: newHealthWalletId,
+      healthWalletId: newHealthWalletId,
+      fullName: registrationData.fullName?.trim() || 'Citizen',
+      dateOfBirth: registrationData.dateOfBirth || '',
+      dob: registrationData.dateOfBirth || '',
+      gender: registrationData.gender || 'Other',
+      aadhaarNumber: cleanAadhaar,
+      mobileNumber: cleanMobile,
+      phone: `+91 ${cleanMobile}`,
+      email: registrationData.email?.trim() || '',
+      state: registrationData.state?.trim() || '',
+      district: registrationData.district?.trim() || '',
+      address: registrationData.address?.trim() || '',
+      bloodGroup: registrationData.bloodGroup || 'O+',
+      allergies: allergiesArray,
+      criticalConditions: conditionsArray,
+      chronicConditions: conditionsArray,
+      emergencyContact: {
+        name: registrationData.emergencyContactName?.trim() || '',
+        mobile: cleanEmMobile,
+        relationship: registrationData.emergencyContactRelationship || 'Guardian'
+      },
+      emergencyContacts: [
+        {
+          id: 'ec-1',
+          name: registrationData.emergencyContactName?.trim() || '',
+          relationship: registrationData.emergencyContactRelationship || 'Guardian',
+          phone: `+91 ${cleanEmMobile}`,
+          priority: 'Primary'
+        }
+      ],
+      consents: {
+        termsAndConditions: true,
+        privacyAndDataProcessing: true,
+        agreedAt: new Date().toISOString()
+      },
+      createdAt: new Date().toISOString()
+    };
+
     setState(prev => ({
       ...prev,
-      user: { ...prev.user, ...updatedFields }
+      user: newUser,
+      isAuthenticated: true,
+      currentRoute: 'dashboard'
     }));
-    addToast('Profile information saved', 'success');
+
+    addToast(`Health Wallet created successfully! Welcome, ${newUser.fullName.split(' ')[0]}`, 'success');
+    return newUser;
   };
 
   // Blood Donation Module Methods
@@ -1539,6 +1657,9 @@ export const HealthWalletProvider = ({ children }) => {
         updateOrganPledge,
         revokeOrganPledge,
         updateUserProfile,
+        registerNewUser,
+        generateHealthWalletId,
+        maskAadhaar,
         bloodDonors: state.bloodDonors || [],
         donors: state.bloodDonors || [],
         donorProfile: state.donorProfile || null,

@@ -18,6 +18,7 @@ import {
 export const DashboardPage = () => {
   const {
     user,
+    healthWalletId,
     medicines = [],
     medicationLogs = {},
     familyMembers,
@@ -85,13 +86,32 @@ export const DashboardPage = () => {
   return (
     <div>
       {/* 1. Header (Panel 2 Reference) */}
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--hw-text-main)', margin: '0 0 4px 0', letterSpacing: '-0.02em' }}>
-          Good Morning, {user.fullName.split(' ')[0]}!
-        </h1>
-        <p style={{ fontSize: '13px', color: 'var(--hw-text-muted)', margin: 0 }}>
-          Your health information is safe and accessible.
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--hw-text-main)', margin: '0 0 4px 0', letterSpacing: '-0.02em' }}>
+            Good Morning, {user?.fullName ? user.fullName.split(' ')[0] : 'Citizen'}!
+          </h1>
+          <p style={{ fontSize: '13px', color: 'var(--hw-text-muted)', margin: 0 }}>
+            Your health information is safe and accessible.
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '6px 14px',
+            borderRadius: '20px',
+            background: 'var(--hw-primary-light, #eff6ff)',
+            border: '1px solid var(--hw-primary-border, #bfdbfe)'
+          }}
+        >
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--hw-primary)' }}>ID:</span>
+          <span style={{ fontFamily: 'var(--hw-font-mono, monospace)', fontSize: '13px', fontWeight: 700, color: 'var(--hw-primary)' }}>
+            {healthWalletId}
+          </span>
+        </div>
       </div>
 
       {/* 2. 4 Stat Overview Cards in a Horizontal Row (Panel 2 Reference) */}
